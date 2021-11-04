@@ -3,7 +3,10 @@
 #include <SHADERed/Objects/ObjectManager.h>
 #include <SHADERed/Objects/RenderEngine.h>
 #include <SHADERed/Objects/Settings.h>
+#include <SHADERed/Objects/TextureEnvironment.h>
 #include <SHADERed/Engine/Model.h>
+
+
 
 #include <unordered_map>
 #include <fstream>
@@ -431,6 +434,43 @@ namespace ed {
 		// clean up
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 		item->TextureSize = glm::ivec2(width, height);
+
+		return true;
+	}
+	bool ObjectManager::CreateTextureEnvironment(const std::string& file)
+	{
+		Logger::Get().Log("Creating a environment texture " + file + " ...");
+
+		if (Exists(file)) {
+			Logger::Get().Log("Cannot create a texture " + file + " because that texture is already added to the project", true);
+			return false;
+		}
+
+		TextureEnvironment::EnvironmentTexture et = TextureEnvironment::Create(file);
+		if (!et.m_valid)
+			return false;
+
+		auto filePath = std::filesystem::path(file);
+		auto stem = filePath.stem();
+		auto filePathNoExt = stem;
+
+		{
+			ObjectManagerItem* item = new ObjectManagerItem(filePathNoExt.string() + ".env.hdr", ObjectType::CubeMap);
+			m_items.push_back(item);
+			item->Texture = et.m_envTexture.id;
+		}
+
+		{
+			ObjectManagerItem* item = new ObjectManagerItem(filePathNoExt.string() + ".ir.hdr", ObjectType::CubeMap);
+			m_items.push_back(item);
+			item->Texture = et.m_irmapTexture.id;
+		}
+
+		{
+			ObjectManagerItem* item = new ObjectManagerItem(filePathNoExt.string() + ".BRDFLUT.hdr", ObjectType::CubeMap);
+			m_items.push_back(item);
+			item->Texture = et.m_spBRDF_LUT.id;
+		}
 
 		return true;
 	}

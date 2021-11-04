@@ -205,7 +205,14 @@ Run:
 
 ### Windows
 1. Install SDL2, GLEW & GLM through your favourite package manager (I recommend vcpkg)
-2. Run cmake-gui and set CMAKE_TOOLCHAIN_FILE variable
+2. Run cmake-gui and set CMAKE_TOOLCHAIN_FILE variable 
+
+   * CMAKE_TOOLCHAIN_FILE : select "Specify toolchain file for cross-compiling", then choose 
+
+     your vcpkg.cmake, like: `C:\vcpkg\scripts\buildsystems\vcpkg.cmake`
+
+   * Make the build directory at : Root/PBR/projects/build, which is at the same depth as cmake folder.
+
 3. Press Configure and then Generate if no errors occured
 4. Open the .sln and build the project!
 

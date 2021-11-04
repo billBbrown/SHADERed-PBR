@@ -818,6 +818,8 @@ namespace ed {
 						this->CreateNewTexture3D();
 					if (ImGui::MenuItem("Cubemap", KeyboardShortcuts::Instance().GetString("Project.NewCubeMap").c_str()))
 						this->CreateNewCubemap();
+					if (ImGui::MenuItem("Texture", KeyboardShortcuts::Instance().GetString("Project.NewTextureEnvironment").c_str()))
+						this->CreateNewTextureEnvironment();
 					if (ImGui::MenuItem("Audio", KeyboardShortcuts::Instance().GetString("Project.NewAudio").c_str()))
 						this->CreateNewAudio();
 					if (ImGui::MenuItem("Render Texture", KeyboardShortcuts::Instance().GetString("Project.NewRenderTexture").c_str()))
@@ -1410,6 +1412,7 @@ namespace ed {
 		ImGui::SameLine();
 		if (ImGui::Button(UI_ICON_CUBE)) this->CreateNewCubemap();
 		m_tooltip("New cubemap");
+		//CreateNewTextureEnvironment??
 		ImGui::SameLine();
 		if (ImGui::Button(UI_ICON_FILE_TEXT)) this->CreateNewBuffer();
 		m_tooltip("New buffer");
@@ -2256,6 +2259,13 @@ namespace ed {
 	{
 		ifd::FileDialog::Instance().Open("CreateTexture3DDlg", "Select texture(s)", "DDS file (*.dds){.dds},.*", true);
 	}
+
+	void GUIManager::CreateNewTextureEnvironment()
+	{
+		ifd::FileDialog::Instance().Open("CreateTextureEnvironmentDlg", 
+			"Select hdr environment texture(s)", "HDR file (*.hdr){.hdr},.*", true);
+	}
+
 	void GUIManager::CreateNewAudio()
 	{
 		ifd::FileDialog::Instance().Open("CreateAudioDlg", "Select audio file", "Audio file (*.wav;*.flac;*.ogg;*.midi){.wav,.flac,.ogg,.midi},.*");
@@ -2399,6 +2409,15 @@ namespace ed {
 				const std::vector<std::filesystem::path>& results = ifd::FileDialog::Instance().GetResults();
 				for (const auto& res : results)
 					m_data->Objects.CreateTexture3D(res.u8string());
+			}
+
+			ifd::FileDialog::Instance().Close();
+		}
+		if (ifd::FileDialog::Instance().IsDone("CreateTextureEnvironmentDlg")) {
+			if (ifd::FileDialog::Instance().HasResult()) {
+				const std::vector<std::filesystem::path>& results = ifd::FileDialog::Instance().GetResults();
+				for (const auto& res : results)
+					m_data->Objects.CreateTextureEnvironment(res.u8string());
 			}
 
 			ifd::FileDialog::Instance().Close();
@@ -3093,6 +3112,9 @@ namespace ed {
 		});
 		KeyboardShortcuts::Instance().SetCallback("Project.NewTexture3D", [=]() {
 			CreateNewTexture3D();
+		});
+		KeyboardShortcuts::Instance().SetCallback("Project.NewTextureEnvironment", [=]() {
+			CreateNewTextureEnvironment();
 		});
 		KeyboardShortcuts::Instance().SetCallback("Project.NewAudio", [=]() {
 			CreateNewAudio();

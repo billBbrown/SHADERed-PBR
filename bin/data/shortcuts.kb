@@ -82,6 +82,7 @@ Project.NewCubeMap CTRL N C
 Project.NewRenderTexture CTRL N R
 Project.NewShaderPass CTRL N P
 Project.NewTexture CTRL N T
+Project.NewTextureEnvironment CTRL N E
 Project.Open CTRL O
 Project.Rebuild CTRL F5
 Project.Save CTRL S

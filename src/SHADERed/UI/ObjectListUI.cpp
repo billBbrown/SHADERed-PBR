@@ -287,6 +287,7 @@ namespace ed {
 			if (ImGui::Selectable("Create Texture")) m_ui->CreateNewTexture();
 			if (ImGui::Selectable("Create Texture 3D")) m_ui->CreateNewTexture3D();
 			if (ImGui::Selectable("Create Cubemap")) m_ui->CreateNewCubemap();
+			if (ImGui::Selectable("Create Texture Environment")) m_ui->CreateNewTextureEnvironment();
 			if (ImGui::Selectable("Create Render Texture")) m_ui->CreateNewRenderTexture();
 			if (ImGui::Selectable("Create Audio")) m_ui->CreateNewAudio();
 			if (ImGui::Selectable("Create Buffer")) m_ui->CreateNewBuffer();
