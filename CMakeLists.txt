@@ -47,6 +47,8 @@ set(SOURCES
 	src/SHADERed/Objects/ThemeContainer.cpp
 	src/SHADERed/Objects/PluginManager.cpp
 	src/SHADERed/Objects/WebAPI.cpp
+	src/SHADERed/Objects/TextureEnvironment.cpp
+	src/SHADERed/Objects/image.cpp
 
 # UI Tools
 	src/SHADERed/UI/Tools/CubemapPreview.cpp
