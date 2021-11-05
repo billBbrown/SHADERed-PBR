@@ -58,6 +58,7 @@ set(SOURCES
 	src/SHADERed/UI/Tools/DebuggerOutline.cpp
 	src/SHADERed/UI/Tools/NotificationSystem.cpp
 	src/SHADERed/UI/Tools/Texture3DPreview.cpp
+	src/SHADERed/UI/Tools/TexturePreview.cpp
 
 # UI Debug
 	src/SHADERed/UI/Debug/AutoUI.cpp

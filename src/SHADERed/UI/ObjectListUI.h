@@ -1,6 +1,7 @@
 #pragma once
 #include <SHADERed/UI/Tools/CubemapPreview.h>
 #include <SHADERed/UI/Tools/Texture3DPreview.h>
+#include <SHADERed/UI/Tools/TexturePreview.h>
 #include <SHADERed/UI/UIView.h>
 
 namespace ed {
@@ -11,6 +12,7 @@ namespace ed {
 		{
 			m_cubePrev.Init(152, 114);
 			m_tex3DPrev.Init();
+			m_texPrev.Init(256, 256);
 		}
 		~ObjectListUI() { }
 
@@ -21,5 +23,6 @@ namespace ed {
 		ObjectManagerItem* m_saveObject;
 		CubemapPreview m_cubePrev;
 		Texture3DPreview m_tex3DPrev;
+		TexturePreview m_texPrev;
 	};
 }

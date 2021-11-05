@@ -457,11 +457,21 @@ namespace ed {
 		auto filePathNoExt = stem;
 
 		m_parser->ModifyProject();
+		
 		{
 			ObjectManagerItem* item = new ObjectManagerItem(file, ObjectType::CubeMap);//Only main can be stored
 			m_items.push_back(item);
 			item->EnvironmentTypeValue = EnvironmentType::Main;
 			item->Texture = et.m_envTexture.id;
+		}
+
+		{
+			ObjectManagerItem* item = new ObjectManagerItem(filePathNoExt.string() + ".latlong.hdr", ObjectType::Texture); //Only main can be stored
+			m_items.push_back(item);
+			item->EnvironmentTypeValue = EnvironmentType::Origin;
+			item->Texture = et.m_originTexture.id;
+
+			item->TextureSize = glm::ivec2(et.m_originTexture.width, et.m_originTexture.height);
 		}
 
 		{

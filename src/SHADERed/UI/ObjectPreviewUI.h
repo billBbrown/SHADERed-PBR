@@ -3,6 +3,7 @@
 #include <SHADERed/Objects/PipelineItem.h>
 #include <SHADERed/UI/Tools/CubemapPreview.h>
 #include <SHADERed/UI/Tools/Texture3DPreview.h>
+#include <SHADERed/UI/Tools/TexturePreview.h>
 #include <SHADERed/UI/Tools/Magnifier.h>
 #include <SHADERed/UI/UIView.h>
 
@@ -12,8 +13,9 @@ namespace ed {
 		ObjectPreviewUI(GUIManager* ui, ed::InterfaceManager* objects, const std::string& name = "", bool visible = true)
 				: UIView(ui, objects, name, visible)
 		{
-			m_cubePrev.Init(256, 192);
+			m_cubePrev.Init(256 * 4, 192 * 4);
 			m_tex3DPrev.Init();
+			m_texPrev.Init(1024, 1024);
 			m_curHoveredItem = -1;
 			m_initRowSize = false;
 			m_saveObject = nullptr;
@@ -51,7 +53,7 @@ namespace ed {
 		// tools
 		CubemapPreview m_cubePrev;
 		Texture3DPreview m_tex3DPrev;
-
+		TexturePreview m_texPrev;
 		// for each item opened
 		int m_curHoveredItem;
 		std::vector<Magnifier> m_zoom;

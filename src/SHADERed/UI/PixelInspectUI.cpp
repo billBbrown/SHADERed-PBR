@@ -559,8 +559,10 @@ namespace ed {
 							float imgWH = (tex->height / (float)tex->width);
 							m_tex3DPrev.Draw((GLuint)((uintptr_t)tex->user_data), 128.0f, 128.0f * (float)imgWH);
 							ImGui::Image((void*)(intptr_t)m_tex3DPrev.GetTexture(), ImVec2(128.0f, 128.0f * imgWH));
-						} else
-							ImGui::Image((ImTextureID)tex->user_data, ImVec2(128.0f, 128.0f * (tex->height / (float)tex->width)), ImVec2(0, 1), ImVec2(1, 0));
+						} else {
+							m_texPrev.Draw((GLuint)((uintptr_t)tex->user_data));
+							ImGui::Image((void*)(intptr_t)m_texPrev.GetTexture(), ImVec2(128.0f, 128.0f * (tex->height / (float)tex->width)), ImVec2(0, 1), ImVec2(1, 0));
+						}
 					} else {
 						// color preview
 						if (resType->value_type == spvm_value_type_vector && m_data->Debugger.GetVM()->results[resType->pointer].value_type == spvm_value_type_float) {

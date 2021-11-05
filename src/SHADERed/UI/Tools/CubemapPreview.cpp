@@ -60,7 +60,7 @@ void main()
     }
     else discard;
 
-    fragColor = texture(cubemap, dir);
+    fragColor = textureLod(cubemap, dir, 0);
 }
 )";
 

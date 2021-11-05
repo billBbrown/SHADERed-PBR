@@ -160,7 +160,8 @@ namespace TextureEnvironment
 	EnvironmentTexture Create(const std::string& file)
 	{
 		EnvironmentTexture et;
-
+		//Global 
+		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 		// Unfiltered environment cube map (temporary).
 		Texture envTextureUnfiltered = Renderer::createTexture(GL_TEXTURE_CUBE_MAP, kEnvMapSize, kEnvMapSize, GL_RGBA16F);
 
@@ -173,13 +174,14 @@ namespace TextureEnvironment
 				return et;
 
 			Texture envTextureEquirect = Renderer::createTexture(image, GL_RGB, GL_RGB16F, 1);
+			et.m_originTexture = envTextureEquirect;
 
 			glUseProgram(equirectToCubeProgram);
 			glBindTextureUnit(0, envTextureEquirect.id);
 			glBindImageTexture(0, envTextureUnfiltered.id, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 			glDispatchCompute(envTextureUnfiltered.width / 32, envTextureUnfiltered.height / 32, 6);
 
-			glDeleteTextures(1, &envTextureEquirect.id);
+			//glDeleteTextures(1, &envTextureEquirect.id);
 			glDeleteProgram(equirectToCubeProgram);
 		}
 

@@ -15,6 +15,7 @@ namespace TextureEnvironment
 	};
 
 	struct EnvironmentTexture {
+		Texture m_originTexture;
 		Texture m_envTexture;
 		Texture m_irmapTexture;
 		Texture m_spBRDF_LUT;
