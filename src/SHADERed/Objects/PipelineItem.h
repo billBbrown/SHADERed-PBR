@@ -289,6 +289,8 @@ namespace ed {
 			bool Instanced;
 			int InstanceCount;
 			void* InstanceBuffer;
+
+			int TheModelImportFlags = 0;
 		};
 	}
 }

@@ -72,13 +72,18 @@ namespace ed {
 			}
 		}
 
-		bool Model::LoadFromFile(const std::string& path)
+		bool Model::LoadFromFile(const std::string& path, int modelImportFlag)
 		{
 			ed::Logger::Get().Log("Loading a 3D model from file \"" + path + "\"");
 
 			// read file via ASSIMP
 			Assimp::Importer importer;
-			const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+
+			int modelImportFlagUsing = modelImportFlag;
+			if (modelImportFlagUsing == 0) //At lease need aiProcess_Triangulate
+				modelImportFlagUsing = aiProcess_Triangulate | aiProcess_FlipUVs;
+
+			const aiScene* scene = importer.ReadFile(path, modelImportFlagUsing);
 
 			// check for errors
 			if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero

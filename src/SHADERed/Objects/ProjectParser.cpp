@@ -1006,7 +1006,7 @@ namespace ed {
 
 		return string;
 	}
-	eng::Model* ProjectParser::LoadModel(const std::string& file)
+	eng::Model* ProjectParser::LoadModel(const std::string& file, int modelImportFlag)
 	{
 		// return already loaded model
 		for (auto& mdl : m_models)
@@ -1017,7 +1017,7 @@ namespace ed {
 
 		// load the model
 		std::string path = GetProjectPath(file);
-		bool loaded = m_models[m_models.size() - 1].second->LoadFromFile(path);
+		bool loaded = m_models[m_models.size() - 1].second->LoadFromFile(path, modelImportFlag);
 		if (!loaded) {
 			m_models.erase(m_models.begin() + (m_models.size() - 1));
 			return nullptr;
@@ -1318,6 +1318,7 @@ namespace ed {
 
 				itemNode.append_child("filepath").text().set(opath.c_str());
 				itemNode.append_child("grouponly").text().set(data->OnlyGroup);
+				
 				if (data->OnlyGroup)
 					itemNode.append_child("group").text().set(data->GroupName);
 				if (data->Scale.x != 1.0f)
@@ -1344,6 +1345,9 @@ namespace ed {
 					itemNode.append_child("instancecount").text().set(data->InstanceCount);
 				if (data->InstanceBuffer != nullptr)
 					itemNode.append_child("instancebuffer").text().set(m_objects->GetByBufferID(((BufferObject*)data->InstanceBuffer)->ID)->Name.c_str());
+
+				itemNode.append_child("modelImportFlags").text().set(data->TheModelImportFlags);
+
 			} else if (item->Type == PipelineItem::ItemType::VertexBuffer) {
 				itemNode.append_attribute("type").set_value("vertexbuffer");
 
@@ -1555,6 +1559,7 @@ namespace ed {
 				mdata->InstanceBuffer = nullptr;
 				mdata->Instanced = false;
 				mdata->InstanceCount = 0;
+				mdata->TheModelImportFlags = 0;
 
 				modelUBOs[mdata] = std::make_pair("", data);
 
@@ -1589,6 +1594,8 @@ namespace ed {
 						mdata->InstanceCount = attrNode.text().as_int();
 					else if (strcmp(attrNode.name(), "instancebuffer") == 0)
 						modelUBOs[mdata] = std::make_pair(attrNode.text().as_string(), data);
+					else if (strcmp(attrNode.name(), "modelImportFlags") == 0)
+						mdata->TheModelImportFlags = attrNode.text().as_int();
 				}
 
 				if (strlen(mdata->Filename) > 0)
@@ -1678,7 +1685,7 @@ namespace ed {
 				pipe::Model* tData = reinterpret_cast<pipe::Model*>(itemData);
 
 				//std::string objMem = LoadProjectFile(tData->Filename);
-				eng::Model* ptrObject = LoadModel(tData->Filename);
+				eng::Model* ptrObject = LoadModel(tData->Filename, tData->TheModelImportFlags);
 				bool loaded = ptrObject != nullptr;
 
 				if (loaded)
@@ -2023,7 +2030,7 @@ namespace ed {
 					pipe::Model* tData = reinterpret_cast<pipe::Model*>(itemData);
 
 					//std::string objMem = LoadProjectFile(tData->Filename);
-					eng::Model* ptrObject = LoadModel(tData->Filename);
+					eng::Model* ptrObject = LoadModel(tData->Filename, 0); //p1 dont have model import flag, use default
 					bool loaded = ptrObject != nullptr;
 
 					if (loaded)

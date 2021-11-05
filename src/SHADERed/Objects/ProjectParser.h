@@ -46,7 +46,7 @@ namespace ed {
 		std::string LoadProjectFile(const std::string& file);
 		std::string LoadFile(const std::string& file);
 		char* LoadProjectFile(const std::string& file, size_t& len);
-		eng::Model* LoadModel(const std::string& file);
+		eng::Model* LoadModel(const std::string& file, int modelImportFlag);
 
 		void SaveProjectFile(const std::string& file, const std::string& data);
 

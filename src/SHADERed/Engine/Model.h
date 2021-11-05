@@ -47,7 +47,7 @@ namespace ed {
 			std::string Directory;
 
 			std::vector<std::string> GetMeshNames();
-			bool LoadFromFile(const std::string& path);
+			bool LoadFromFile(const std::string& path, int modelImportFlag = 0 /*0 will use default flag*/);
 			void Draw(bool instanced = false, int iCount = 0);
 			void Draw(const std::string& mesh);
 

@@ -1739,10 +1739,11 @@ namespace ed {
 					newData->Scale = origData->Scale;
 					newData->Position = origData->Position;
 					newData->Rotation = origData->Rotation;
+					newData->TheModelImportFlags = origData->TheModelImportFlags;
 
 					if (strlen(newData->Filename) > 0) {
 						std::string objMem = m_data->Parser.LoadProjectFile(newData->Filename);
-						eng::Model* mdl = m_data->Parser.LoadModel(newData->Filename);
+						eng::Model* mdl = m_data->Parser.LoadModel(newData->Filename, newData->TheModelImportFlags);
 
 						bool loaded = mdl != nullptr;
 						if (loaded)
@@ -2017,10 +2018,11 @@ namespace ed {
 						newData->Scale = origData->Scale;
 						newData->Position = origData->Position;
 						newData->Rotation = origData->Rotation;
+						newData->TheModelImportFlags = origData->TheModelImportFlags;
 
 						if (strlen(newData->Filename) > 0) {
 							std::string objMem = m_data->Parser.LoadProjectFile(newData->Filename);
-							eng::Model* mdl = m_data->Parser.LoadModel(newData->Filename);
+							eng::Model* mdl = m_data->Parser.LoadModel(newData->Filename, newData->TheModelImportFlags);
 
 							bool loaded = mdl != nullptr;
 							if (loaded)

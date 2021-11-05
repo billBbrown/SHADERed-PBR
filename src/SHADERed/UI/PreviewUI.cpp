@@ -1021,10 +1021,11 @@ namespace ed {
 				data->Scale = origData->Scale;
 				data->Position = origData->Position;
 				data->Rotation = origData->Rotation;
+				data->TheModelImportFlags = origData->TheModelImportFlags;
 
 				if (strlen(data->Filename) > 0) {
 					std::string objMem = m_data->Parser.LoadProjectFile(data->Filename);
-					eng::Model* mdl = m_data->Parser.LoadModel(data->Filename);
+					eng::Model* mdl = m_data->Parser.LoadModel(data->Filename, data->TheModelImportFlags);
 
 					bool loaded = mdl != nullptr;
 					if (loaded)

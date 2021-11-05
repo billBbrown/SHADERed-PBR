@@ -25,6 +25,35 @@
 #define PATH_SPACE_LEFT Settings::Instance().CalculateSize(-40)
 
 namespace ed {
+	
+	struct ModelImportFlag {
+		const char* Name = nullptr;
+		aiPostProcessSteps StepFlag;
+		bool Enabled = false;
+	};
+	/*
+	default should be : (aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_Triangulate |aiProcess_SortByPType| aiProcess_GenNormals | aiProcess_PreTransformVertices|aiProcess_GenUVCoords | aiProcess_OptimizeMeshes | aiProcess_ValidateDataStructure),x
+	= 0x00a48529
+	*/
+	static ModelImportFlag defaultModelImportFlags[] = {
+		{ "Flip UVs(For dx)", aiProcess_FlipUVs, true },
+		{ "Calculate Tangent", aiProcess_CalcTangentSpace, true },
+		{ "Triangulate Non Triangle Faces", aiProcess_Triangulate, true },
+		{ "Sort by PType", aiProcess_SortByPType, true },
+		{ "PreTransform Vertices", aiProcess_PreTransformVertices, true },
+		{ "Gen Normals", aiProcess_GenNormals, true },
+		{ "Gen UV", aiProcess_GenUVCoords, true },
+		{ "Optimize Mesh", aiProcess_OptimizeMeshes, true },
+		{ "Debone", aiProcess_Debone, false },
+		{ "Validate structure", aiProcess_ValidateDataStructure, true },
+	};
+
+	template <typename T, std::size_t N>
+	constexpr std::size_t countof(T const (&)[N]) noexcept
+	{
+		return N;
+	}
+
 	CreateItemUI::CreateItemUI(GUIManager* ui, InterfaceManager* objects, const std::string& name, bool visible)
 			: UIView(ui, objects, name, visible)
 	{
@@ -46,6 +75,7 @@ namespace ed {
 	void CreateItemUI::OnEvent(const SDL_Event& e)
 	{
 	}
+
 	void CreateItemUI::Update(float delta)
 	{
 		int colWidth = 165;
@@ -656,6 +686,34 @@ namespace ed {
 				ifd::FileDialog::Instance().Open("CreateMeshDlg", "3D model", ".*");
 			}
 			ImGui::NextColumn();
+			ImGui::Text("Import Flags(refer to aiPostProcessSteps of lib assimp):");
+			ImGui::NextColumn();
+
+			{
+				ModelImportFlag modelImportFlags[countof(defaultModelImportFlags)];
+				memcpy(modelImportFlags, defaultModelImportFlags, sizeof(defaultModelImportFlags));
+				if (data->TheModelImportFlags != 0) //Not default
+				{
+					for (ModelImportFlag& md : modelImportFlags) {
+						md.Enabled = !!(data->TheModelImportFlags & md.StepFlag);
+					}
+				}
+
+				for (ModelImportFlag& md : modelImportFlags) {
+					ImGui::Checkbox(md.Name, &md.Enabled);
+				}
+
+				int modelImportFlagSum = 0;
+				for (ModelImportFlag& md : modelImportFlags) {
+					if (md.Enabled)
+						modelImportFlagSum |= md.StepFlag;
+					else
+						modelImportFlagSum &= ~md.StepFlag;
+				}
+
+				data->TheModelImportFlags = modelImportFlagSum;
+			}
+			
 
 			if (m_groups.size() > 0) {
 				// should we render only a part of the mesh?
@@ -714,7 +772,9 @@ namespace ed {
 
 				strcpy(m_dialogPath, file.c_str());
 
-				eng::Model* mdl = m_data->Parser.LoadModel(m_dialogPath);
+				pipe::Model* data = (pipe::Model*)m_item.Data;
+
+				eng::Model* mdl = m_data->Parser.LoadModel(m_dialogPath, data->TheModelImportFlags);
 				if (mdl != nullptr)
 					m_groups = mdl->GetMeshNames();
 			}
@@ -938,9 +998,10 @@ namespace ed {
 				data->Scale = origData->Scale;
 				data->Position = origData->Position;
 				data->Rotation = origData->Rotation;
+				data->TheModelImportFlags = origData->TheModelImportFlags;
 
 				if (strlen(data->Filename) > 0) {
-					eng::Model* mdl = m_data->Parser.LoadModel(data->Filename);
+					eng::Model* mdl = m_data->Parser.LoadModel(data->Filename, data->TheModelImportFlags);
 
 					bool loaded = mdl != nullptr;
 					if (loaded)
