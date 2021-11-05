@@ -78,6 +78,13 @@ namespace ed {
 		void* Data;
 	};
 
+	enum class EnvironmentType : uint8_t {
+		None = 0,
+		Main = 1,
+		Iradiance,
+		BrdfLut
+	};
+
 	/* object - TODO: maybe inheritance? class ImageObject : public ObjectManagerItem -> though, too many changes */
 	class ObjectManagerItem {
 	public:
@@ -104,6 +111,7 @@ namespace ed {
 			Image = nullptr;
 			Image3D = nullptr;
 			Plugin = nullptr;
+			EnvironmentTypeValue = EnvironmentType::None;
 		}
 		~ObjectManagerItem()
 		{
@@ -137,6 +145,8 @@ namespace ed {
 		int Depth;
 		GLuint Texture, FlippedTexture;
 		std::vector<std::string> CubemapPaths;
+		
+		EnvironmentType EnvironmentTypeValue;
 
 		bool Texture_VFlipped;
 		GLuint Texture_MinFilter, Texture_MagFilter, Texture_WrapS, Texture_WrapT, Texture_WrapR;

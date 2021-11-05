@@ -62,6 +62,13 @@ namespace ed {
 					itemText = itemText.substr(lastSlash + 1);
 			}
 
+			if (oItem->Type == ObjectType::CubeMap && oItem->EnvironmentTypeValue == EnvironmentType::Main) {
+				size_t lastSlash = oItem->Name.find_last_of("/\\");
+
+				if (lastSlash != std::string::npos && !isPluginOwner)
+					itemText = itemText.substr(lastSlash + 1);
+			}
+
 			PluginObject* pobj = oItem->Plugin;
 
 			bool isBuf = (oItem->Type == ObjectType::Buffer);

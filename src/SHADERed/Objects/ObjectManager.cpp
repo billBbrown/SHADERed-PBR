@@ -446,7 +446,9 @@ namespace ed {
 			return false;
 		}
 
-		TextureEnvironment::EnvironmentTexture et = TextureEnvironment::Create(file);
+		std::string path = m_parser->GetProjectPath(file);
+
+		TextureEnvironment::EnvironmentTexture et = TextureEnvironment::Create(path);
 		if (!et.m_valid)
 			return false;
 
@@ -454,23 +456,30 @@ namespace ed {
 		auto stem = filePath.stem();
 		auto filePathNoExt = stem;
 
+		m_parser->ModifyProject();
 		{
-			ObjectManagerItem* item = new ObjectManagerItem(filePathNoExt.string() + ".env.hdr", ObjectType::CubeMap);
+			ObjectManagerItem* item = new ObjectManagerItem(file, ObjectType::CubeMap);//Only main can be stored
 			m_items.push_back(item);
+			item->EnvironmentTypeValue = EnvironmentType::Main;
 			item->Texture = et.m_envTexture.id;
 		}
 
 		{
 			ObjectManagerItem* item = new ObjectManagerItem(filePathNoExt.string() + ".ir.hdr", ObjectType::CubeMap);
 			m_items.push_back(item);
+			item->EnvironmentTypeValue = EnvironmentType::Iradiance;
 			item->Texture = et.m_irmapTexture.id;
 		}
 
 		{
-			ObjectManagerItem* item = new ObjectManagerItem(filePathNoExt.string() + ".BRDFLUT.hdr", ObjectType::CubeMap);
+			ObjectManagerItem* item = new ObjectManagerItem(filePathNoExt.string() + ".BRDFLUT.hdr", ObjectType::Texture);
 			m_items.push_back(item);
+			item->EnvironmentTypeValue = EnvironmentType::BrdfLut;
 			item->Texture = et.m_spBRDF_LUT.id;
+
+			item->TextureSize = glm::ivec2(et.m_spBRDF_LUT.width, et.m_spBRDF_LUT.height);
 		}
+		
 
 		return true;
 	}
