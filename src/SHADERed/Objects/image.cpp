@@ -19,6 +19,8 @@ std::shared_ptr<Image> Image::fromFile(const std::string& filename, int channels
 {
 	std::printf("Loading image: %s\n", filename.c_str());
 
+	stbi_set_flip_vertically_on_load(0);
+
 	std::shared_ptr<Image> image{new Image};
 
 	if(stbi_is_hdr(filename.c_str())) {
@@ -40,7 +42,7 @@ std::shared_ptr<Image> Image::fromFile(const std::string& filename, int channels
 	}
 
 	if(!image->m_pixels) {
-		throw std::runtime_error("Failed to load image file: " + filename);
+		return nullptr;
 	}
 	return image;
 }
