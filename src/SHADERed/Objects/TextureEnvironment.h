@@ -12,6 +12,9 @@ namespace TextureEnvironment
 		GLuint id;
 		int width, height;
 		int levels;
+		GLenum format;
+		GLenum type;
+		GLenum internalFormat;
 	};
 
 	struct EnvironmentTexture {
