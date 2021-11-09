@@ -10,7 +10,10 @@
 #include <GL/gl.h>
 #endif
 
+#include "TextureHelper.h"
+
 namespace ed {
+	
 	enum class ObjectType {
 		Unknown,
 		RenderTexture,
@@ -144,6 +147,7 @@ namespace ed {
 
 		glm::ivec2 TextureSize;
 		int Depth;
+		std::unique_ptr<TextureHelper::Texture> TextureDetail; //Save more detail
 		GLuint Texture, FlippedTexture;
 		std::vector<std::string> CubemapPaths;
 		

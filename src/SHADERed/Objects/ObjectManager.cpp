@@ -3,10 +3,8 @@
 #include <SHADERed/Objects/ObjectManager.h>
 #include <SHADERed/Objects/RenderEngine.h>
 #include <SHADERed/Objects/Settings.h>
-#include <SHADERed/Objects/TextureEnvironment.h>
+#include <SHADERed/Objects/TextureHelper.h>
 #include <SHADERed/Engine/Model.h>
-
-
 
 #include <unordered_map>
 #include <fstream>
@@ -136,19 +134,25 @@ namespace ed {
 		Clear();
 	}
 
-	void loadCubemapFace(GLuint face, const std::string& path, int& w, int& h)
+	void loadCubemapFace(GLuint face, const std::string& path, int& w, int& h, TextureHelper::Texture* outputDetail)
 	{
 		stbi_set_flip_vertically_on_load(0);
 
 		bool isDDS = (std::filesystem::path(path).extension().u8string() == ".dds");
 
 		unsigned char* data = nullptr;
-		unsigned char* paddedData = nullptr;
 		dds_image_t ddsImage = nullptr;
 		int nrChannels = 0;
+		bool isFloat = false;
 
+		//Always create 4 channel texture, but some channel may be trivial
 		if (!isDDS) {
-			data = stbi_load(path.c_str(), &w, &h, &nrChannels, 0);
+			if (stbi_is_hdr(path.c_str())) {
+				data = (unsigned char*)stbi_loadf(path.c_str(), &w, &h, &nrChannels, STBI_rgb_alpha); //force 4 channel
+				isFloat = true;
+			} else {
+				data = stbi_load(path.c_str(), &w, &h, &nrChannels, STBI_rgb_alpha);
+			}
 		} else {
 			ddsImage = dds_load_from_file(path.c_str());
 
@@ -158,31 +162,25 @@ namespace ed {
 			nrChannels = 4;
 		}
 
-		if (nrChannels != 4) {
-			paddedData = (unsigned char*)malloc(w * h * 4);
-			for (int x = 0; x < w; x++) {
-				for (int y = 0; y < h; y++) {
-					if (nrChannels == 3) {
-						paddedData[(y * w + x) * 4 + 0] = data[(y * w + x) * 3 + 0];
-						paddedData[(y * w + x) * 4 + 1] = data[(y * w + x) * 3 + 1];
-						paddedData[(y * w + x) * 4 + 2] = data[(y * w + x) * 3 + 2];
-					} else if (nrChannels == 1) {
-						unsigned char val = data[(y * w + x) * 1 + 0];
-						paddedData[(y * w + x) * 4 + 0] = val;
-						paddedData[(y * w + x) * 4 + 1] = val;
-						paddedData[(y * w + x) * 4 + 2] = val;
-					}
-					paddedData[(y * w + x) * 4 + 3] = 255;
-				}
-			}
+		GLuint format = GL_RGBA;
+		GLenum type = isFloat ? GL_FLOAT : GL_UNSIGNED_BYTE;
+		GLenum internalFormat = isFloat ? GL_RGBA32F : GL_RGBA8;
+
+		if (outputDetail != nullptr) {
+			TextureHelper::Texture& texture = *outputDetail;
+			texture.target = GL_TEXTURE_2D;
+			texture.width = w;
+			texture.height = h;
+			texture.levels = TextureHelper::Utility::numMipmapLevels(w, h);
+			texture.format = format;
+			texture.type = type;
+			texture.internalFormat = internalFormat;
+			assert(texture.Validate()); //Make sure the format is valid
 		}
 
 		glTexImage2D(
 			face,
-			0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, paddedData == nullptr ? data : paddedData);
-
-		if (paddedData != nullptr)
-			free(paddedData);
+			0, internalFormat, w, h, 0, format, type, data);
 
 		if (!isDDS)
 			stbi_image_free(data);
@@ -273,6 +271,7 @@ namespace ed {
 
 		int width = 0, height = 0;
 		unsigned char* data = nullptr;
+		bool isFloat = false;
 		dds_image_t ddsImage = nullptr;
 
 		if (isDDS) {
@@ -284,7 +283,13 @@ namespace ed {
 		} else {
 			int nrChannels = 0;
 			stbi_set_flip_vertically_on_load(1);
-			data = stbi_load(path.c_str(), &width, &height, &nrChannels, STBI_rgb_alpha);
+			if (stbi_is_hdr(path.c_str())) {
+				data = (unsigned char*)stbi_loadf(path.c_str(), &width, &height, &nrChannels, STBI_rgb_alpha);
+				isFloat = true;
+			} else {
+				data = stbi_load(path.c_str(), &width, &height, &nrChannels, STBI_rgb_alpha);
+			}
+			
 		}
 
 		if (data == nullptr || width == 0 || height == 0 || (isDDS && ddsImage == nullptr)) {
@@ -297,6 +302,10 @@ namespace ed {
 		ObjectManagerItem* item = new ObjectManagerItem(file, ObjectType::Texture);
 		m_items.push_back(item);
 
+		GLuint internalFormat = GL_RGBA8; //It used to be GL_RGBA, but since type is always GL_UNSIGNED_BYTE, not SHORT4444 alike, GL_RGBA8 is more precise
+		GLenum format = GL_RGBA;
+		GLenum type = GL_UNSIGNED_BYTE;
+
 		// normal texture
 		glGenTextures(1, &item->Texture);
 		glBindTexture(GL_TEXTURE_2D, item->Texture);
@@ -304,21 +313,18 @@ namespace ed {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, item->Texture_MagFilter);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, item->Texture_WrapS);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, item->Texture_WrapT);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		// flipped texture
-		unsigned char* flippedData = (unsigned char*)malloc(width * height * 4);
-
-		for (int x = 0; x < width; x++) {
-			for (int y = 0; y < height; y++) {
-				flippedData[(y * width + x) * 4 + 0] = data[((height - y - 1) * width + x) * 4 + 0];
-				flippedData[(y * width + x) * 4 + 1] = data[((height - y - 1) * width + x) * 4 + 1];
-				flippedData[(y * width + x) * 4 + 2] = data[((height - y - 1) * width + x) * 4 + 2];
-				flippedData[(y * width + x) * 4 + 3] = data[((height - y - 1) * width + x) * 4 + 3];
-			}
-		}
+		
+		int pixelSize = (isFloat ? 4 * 4 : 4);
+			
+		unsigned char* flippedData = (unsigned char*)malloc(width * height * pixelSize);
+		memcpy(flippedData, data, width * height * pixelSize);
+		stbi_vertical_flip(flippedData, width, height, pixelSize); //No need to do it on our own, it can handle different pixel size
+		
 
 		glGenTextures(1, &item->FlippedTexture);
 		glBindTexture(GL_TEXTURE_2D, item->FlippedTexture);
@@ -326,11 +332,24 @@ namespace ed {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, item->Texture_MagFilter);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, item->Texture_WrapS);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, item->Texture_WrapT);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, flippedData);
+		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, flippedData);
 		glGenerateMipmap(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		item->TextureSize = glm::ivec2(width, height);
+
+		{
+			item->TextureDetail.reset(new TextureHelper::Texture);
+			TextureHelper::Texture& texture = *item->TextureDetail;
+			texture.target = GL_TEXTURE_2D;
+			texture.width = width;
+			texture.height = height;
+			texture.levels = TextureHelper::Utility::numMipmapLevels(width, height);
+			texture.format = format;
+			texture.type = type;
+			texture.internalFormat = internalFormat;
+			assert(texture.Validate()); //Make sure the format is valid
+		}
 
 		free(flippedData);
 
@@ -363,6 +382,10 @@ namespace ed {
 		ObjectManagerItem* item = new ObjectManagerItem(file, ObjectType::Texture3D);
 		m_items.push_back(item);
 
+		GLuint internalFormat = GL_RGBA;
+		GLenum format = GL_RGBA;
+		GLenum type = GL_UNSIGNED_BYTE;
+
 		glGenTextures(1, &item->Texture);
 		glBindTexture(GL_TEXTURE_3D, item->Texture);
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, item->Texture_MinFilter);
@@ -370,9 +393,23 @@ namespace ed {
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, item->Texture_WrapS);
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, item->Texture_WrapT);
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, item->Texture_WrapR);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, ddsImage->header.width, ddsImage->header.height, ddsImage->header.depth, 0, GL_RGBA, GL_UNSIGNED_BYTE, ddsImage->pixels);
+		glTexImage3D(GL_TEXTURE_3D, 0, internalFormat, ddsImage->header.width, ddsImage->header.height, 
+			ddsImage->header.depth, 0, format, type, ddsImage->pixels);
 		glGenerateMipmap(GL_TEXTURE_3D);
 		glBindTexture(GL_TEXTURE_3D, 0);
+
+		{
+			item->TextureDetail.reset(new TextureHelper::Texture);
+			TextureHelper::Texture& texture = *item->TextureDetail;
+			texture.target = GL_TEXTURE_2D;
+			texture.width = ddsImage->header.width;
+			texture.height = ddsImage->header.height;
+			texture.levels = TextureHelper::Utility::numMipmapLevels(texture.width, texture.height);
+			texture.format = format;
+			texture.type = type;
+			texture.internalFormat = internalFormat;
+			assert(texture.Validate()); //Make sure the format is valid
+		}
 
 		item->TextureSize = glm::ivec2(ddsImage->header.width, ddsImage->header.height);
 		item->Depth = ddsImage->header.depth;
@@ -381,7 +418,9 @@ namespace ed {
 
 		return true;
 	}
-	bool ObjectManager::CreateCubemap(const std::string& name, const std::string& left, const std::string& top, const std::string& front, const std::string& bottom, const std::string& right, const std::string& back)
+	bool ObjectManager::CreateCubemap(const std::string& name, 
+		const std::string& left, const std::string& top, const std::string& front, 
+		const std::string& bottom, const std::string& right, const std::string& back)
 	{
 		Logger::Get().Log("Creating a cubemap " + name + " ...");
 
@@ -397,7 +436,6 @@ namespace ed {
 
 		glGenTextures(1, &item->Texture);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, item->Texture);
-		int width, height;
 
 		// properties
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -406,33 +444,66 @@ namespace ed {
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
+		auto firstExtension = std::filesystem::path(left).extension().string();
+
+		bool isFloat = false;
+		if (stbi_is_hdr(m_parser->GetProjectPath(left).c_str()))
+			isFloat = true;	
+
+		int width = 0, height = 0;
+		int width2 = 0, height2 = 0;
+
+		item->TextureDetail.reset(new TextureHelper::Texture());
 		// left face
-		loadCubemapFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, m_parser->GetProjectPath(left), width, height);
+		loadCubemapFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, m_parser->GetProjectPath(left), width, height, item->TextureDetail.get());
 		item->CubemapPaths.push_back(left);
 
 		// top
-		loadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, m_parser->GetProjectPath(top), width, height);
+		if (firstExtension != std::filesystem::path(top).extension().string()) {
+			Logger::Get().Log("Cannot create a cubemap because: " + top + ", extension is not identical to the left one", true);
+			return false;
+		}
+		loadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, m_parser->GetProjectPath(top), width2, height2, nullptr);
 		item->CubemapPaths.push_back(top);
+		//Should it check width2 == width ??
 
 		// front
-		loadCubemapFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, m_parser->GetProjectPath(front), width, height);
+		if (firstExtension != std::filesystem::path(front).extension().string()) {
+			Logger::Get().Log("Cannot create a cubemap because: " + front + ", extension is not identical to the left one", true);
+			return false;
+		}
+		loadCubemapFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, m_parser->GetProjectPath(front), width2, height2, nullptr);
 		item->CubemapPaths.push_back(front);
 
 		// bottom
-		loadCubemapFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, m_parser->GetProjectPath(bottom), width, height);
+		if (firstExtension != std::filesystem::path(bottom).extension().string()) {
+			Logger::Get().Log("Cannot create a cubemap because: " + bottom + ", extension is not identical to the left one", true);
+			return false;
+		}
+		loadCubemapFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, m_parser->GetProjectPath(bottom), width2, height2, nullptr);
 		item->CubemapPaths.push_back(bottom);
 
 		// right
-		loadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X, m_parser->GetProjectPath(right), width, height);
+		if (firstExtension != std::filesystem::path(right).extension().string()) {
+			Logger::Get().Log("Cannot create a cubemap because: " + right + ", extension is not identical to the left one", true);
+			return false;
+		}
+		loadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X, m_parser->GetProjectPath(right), width2, height2, nullptr);
 		item->CubemapPaths.push_back(right);
 
 		// back
-		loadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, m_parser->GetProjectPath(back), width, height);
+		if (firstExtension != std::filesystem::path(back).extension().string()) {
+			Logger::Get().Log("Cannot create a cubemap because: " + back + ", extension is not identical to the left one", true);
+			return false;
+		}
+		loadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, m_parser->GetProjectPath(back), width2, height2, nullptr);
 		item->CubemapPaths.push_back(back);
 
 		// clean up
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 		item->TextureSize = glm::ivec2(width, height);
+
+		assert(item->TextureDetail->width == width);
 
 		return true;
 	}
@@ -449,9 +520,11 @@ namespace ed {
 
 		std::string path = m_parser->GetProjectPath(file);
 
-		TextureEnvironment::EnvironmentTexture et = TextureEnvironment::Create(path);
-		if (!et.m_valid)
+		TextureHelper::EnvironmentTexture et = TextureHelper::Create(path);
+		if (!et.m_valid) {
+			Logger::Get().Log("Cannot create a texture " + file + " , result not valid, please review the log above", true);
 			return false;
+		}
 
 		auto filePath = std::filesystem::path(file);
 		auto dir = filePath.parent_path();
@@ -459,50 +532,66 @@ namespace ed {
 		
 		auto filePathNoExt = stem;
 
-		
 		m_parser->ModifyProject();
 		
 		{
 			std::string projectPath = m_parser->GetProjectPath("");
 			std::string saveFileNameBase = (projectPath / std::filesystem::path("textures") / stem).string();
 
-			SaveTextureToFile(et.m_envTexture, saveFileNameBase + "[Env]" + ItermediateTextureExtensionNoFloat);
-			SaveTextureToFile(et.m_irmapTexture, saveFileNameBase + "[Ir]" + ItermediateTextureExtensionNoFloat);
-			SaveTextureToFile(et.m_spBRDF_LUT, saveFileNameBase + "[Lut]" + ItermediateTextureExtensionNoFloat);
-		}
+			TextureHelper::SavedTexturePathResult envTextureResult;
+			if (!TextureHelper::SaveTextureToFile(et.m_envTexture,
+				saveFileNameBase + "[Env]" + ItermediateTextureExtensionNoFloat, &envTextureResult)) {
+				Logger::Get().Log("Cannot create environment texture: " + file + " because env cube save failed", 
+					true);
+				return false;
+			}
 
-		{
-			ObjectManagerItem* item = new ObjectManagerItem(file, ObjectType::CubeMap);//Only main can be stored
-			m_items.push_back(item);
-			item->EnvironmentTypeValue = EnvironmentType::Main;
-			item->Texture = et.m_envTexture.id;
-		}
+			TextureHelper::SavedTexturePathResult irTextureResult;
+			if (!TextureHelper::SaveTextureToFile(et.m_irmapTexture,
+					saveFileNameBase + "[Ir]" + ItermediateTextureExtensionNoFloat, &irTextureResult)) {
+				Logger::Get().Log("Cannot create environment texture: " + file + " because ir cube save failed", 
+					true);
+				return false;
+			}
 
-		{
-			ObjectManagerItem* item = new ObjectManagerItem(filePathNoExt.string() + ".latlong.hdr", ObjectType::Texture); //Only main can be stored
-			m_items.push_back(item);
-			item->EnvironmentTypeValue = EnvironmentType::Origin;
-			item->Texture = et.m_originTexture.id;
-
-			item->TextureSize = glm::ivec2(et.m_originTexture.width, et.m_originTexture.height);
-		}
-
-		{
-			ObjectManagerItem* item = new ObjectManagerItem(filePathNoExt.string() + ".ir.hdr", ObjectType::CubeMap);
-			m_items.push_back(item);
-			item->EnvironmentTypeValue = EnvironmentType::Iradiance;
-			item->Texture = et.m_irmapTexture.id;
-		}
-
-		{
-			ObjectManagerItem* item = new ObjectManagerItem(filePathNoExt.string() + ".BRDFLUT.hdr", ObjectType::Texture);
-			m_items.push_back(item);
-			item->EnvironmentTypeValue = EnvironmentType::BrdfLut;
-			item->Texture = et.m_spBRDF_LUT.id;
-
-			item->TextureSize = glm::ivec2(et.m_spBRDF_LUT.width, et.m_spBRDF_LUT.height);
-		}
+			TextureHelper::SavedTexturePathResult spBRDF_LUTResult;
+			if (!SaveTextureToFile(et.m_spBRDF_LUT,
+					saveFileNameBase + "[Lut]" + ItermediateTextureExtensionNoFloat, &spBRDF_LUTResult)) {
+				Logger::Get().Log("Cannot create environment texture: " + file + " because lut save failed", true);
+				return false;
+			}
 		
+			//Need to wait for all textures created then add object
+			if (!CreateCubemap(file, envTextureResult.SavedPath[0], envTextureResult.SavedPath[1], envTextureResult.SavedPath[2],
+					envTextureResult.SavedPath[3], envTextureResult.SavedPath[4], envTextureResult.SavedPath[5])) {
+				Logger::Get().Log("Cannot create environment texture: " + file + " because env cube recreation failed",
+					true);
+				return false;
+			}
+			
+			//TO DELETE item->EnvironmentTypeValue = EnvironmentType::Main;
+			
+			if (!CreateCubemap(filePathNoExt.string() + ".ir.hdr", irTextureResult.SavedPath[0], irTextureResult.SavedPath[1],
+					irTextureResult.SavedPath[2], irTextureResult.SavedPath[3], irTextureResult.SavedPath[4], irTextureResult.SavedPath[5])) {
+				Logger::Get().Log("Cannot create environment texture: " + file + " because ir cube recreation failed",
+					true);
+				return false;
+			}
+
+
+			if (!CreateTexture(spBRDF_LUTResult.SavedPath[0])) {
+				Logger::Get().Log("Cannot create environment texture: " + file + " because lut recreation failed",
+					true);
+				return false;
+			}
+		}
+		//Also add the origin one, in case someone need a lat-long sky cube; If someone dont like it, just delete it, no big deal.
+		{
+			ObjectManagerItem* item = new ObjectManagerItem(filePathNoExt.string() + ".origin.hdr", ObjectType::Texture); //Only main can be stored
+			m_items.push_back(item);
+			item->Texture = et.m_originTexture.id;
+			item->TextureSize = glm::ivec2(et.m_originTexture.width, et.m_originTexture.height);
+		}		
 
 		return true;
 	}
@@ -1253,32 +1342,44 @@ namespace ed {
 	}
 	void ObjectManager::SaveToFile(ObjectManagerItem* item, const std::string& filepath)
 	{
-		glm::vec2 imgSize = item->TextureSize;
-		if (item->Type == ObjectType::RenderTexture)
-			imgSize = GetRenderTextureSize(item);
-		else if (item->Type == ObjectType::Image)
-			imgSize = item->Image->Size;
+		if (item->Type != ObjectType::Texture && item->Type != ObjectType::CubeMap) {
+			return;
+		}
 
-		unsigned char* pixels = (unsigned char*)malloc(imgSize.x * imgSize.y * 4);
+		if (!TextureHelper::SaveTextureToFile(*item->TextureDetail, filepath)) {
+			Logger::Get().Log("Cannot save texture: " + filepath, true);
+		}
 
-		GLuint outTex = item->Texture;
+		#if 0
+		{
+			glm::vec2 imgSize = item->TextureSize;
+			if (item->Type == ObjectType::RenderTexture)
+				imgSize = GetRenderTextureSize(item);
+			else if (item->Type == ObjectType::Image)
+				imgSize = item->Image->Size;
 
-		glBindTexture(GL_TEXTURE_2D, outTex);
-		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-		glBindTexture(GL_TEXTURE_2D, 0);
+			unsigned char* pixels = (unsigned char*)malloc(imgSize.x * imgSize.y * 4);
 
-		std::string ext = filepath.substr(filepath.find_last_of('.') + 1);
+			GLuint outTex = item->Texture;
 
-		if (ext == "jpg" || ext == "jpeg")
-			stbi_write_jpg(filepath.c_str(), imgSize.x, imgSize.y, 4, pixels, 100);
-		else if (ext == "bmp")
-			stbi_write_bmp(filepath.c_str(), imgSize.x, imgSize.y, 4, pixels);
-		else if (ext == "tga")
-			stbi_write_tga(filepath.c_str(), imgSize.x, imgSize.y, 4, pixels);
-		else
-			stbi_write_png(filepath.c_str(), imgSize.x, imgSize.y, 4, pixels, imgSize.x * 4);
+			glBindTexture(GL_TEXTURE_2D, outTex);
+			glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+			glBindTexture(GL_TEXTURE_2D, 0);
 
-		free(pixels);
+			std::string ext = filepath.substr(filepath.find_last_of('.') + 1);
+
+			if (ext == "jpg" || ext == "jpeg")
+				stbi_write_jpg(filepath.c_str(), imgSize.x, imgSize.y, 4, pixels, 100);
+			else if (ext == "bmp")
+				stbi_write_bmp(filepath.c_str(), imgSize.x, imgSize.y, 4, pixels);
+			else if (ext == "tga")
+				stbi_write_tga(filepath.c_str(), imgSize.x, imgSize.y, 4, pixels);
+			else
+				stbi_write_png(filepath.c_str(), imgSize.x, imgSize.y, 4, pixels, imgSize.x * 4);
+
+			free(pixels);
+		}
+		#endif
 	}
 
 	bool ObjectManager::HasKeyboardTexture()
