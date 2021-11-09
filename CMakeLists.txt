@@ -37,6 +37,7 @@ set(SOURCES
 	src/SHADERed/Objects/MessageStack.cpp
 	src/SHADERed/Objects/Names.cpp
 	src/SHADERed/Objects/ObjectManager.cpp
+	src/SHADERed/Objects/ObjectManagerItem.cpp
 	src/SHADERed/Objects/PipelineManager.cpp
 	src/SHADERed/Objects/ProjectParser.cpp
 	src/SHADERed/Objects/RenderEngine.cpp
@@ -47,7 +48,7 @@ set(SOURCES
 	src/SHADERed/Objects/ThemeContainer.cpp
 	src/SHADERed/Objects/PluginManager.cpp
 	src/SHADERed/Objects/WebAPI.cpp
-	src/SHADERed/Objects/TextureEnvironment.cpp
+	src/SHADERed/Objects/TextureHelper.cpp
 	src/SHADERed/Objects/image.cpp
 
 # UI Tools

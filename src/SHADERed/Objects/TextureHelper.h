@@ -6,8 +6,32 @@ namespace ed {
 
 	void stbi_vertical_flip(void* image, int w, int h, int bytes_per_pixel); //copy from stbi__vertical_flip
 
+	enum CubeFace {
+		//Really confusing, need enum name to help
+		CubeFace_Left = 0,
+		CubeFace_NegativeX = 0,
+
+		CubeFace_Top = 1,
+		CubeFace_PositiveY = 1,
+
+		CubeFace_Front = 2,
+		CubeFace_NegativeZ = 2,
+
+		CubeFace_Bottom = 3,
+		CubeFace_NegativeY = 3,
+
+		CubeFace_Right = 4,
+		CubeFace_PositiveX = 4,
+
+		CubeFace_Back = 5,
+		CubeFace_PositiveZ = 5,
+
+		Count = 6,
+	};
+
 	namespace TextureHelper {
-		struct Texture {
+
+		struct TextureDesc {
 			GLenum target = GL_TEXTURE_2D;
 			GLuint id = 0;
 			int width = 0, height = 0;
@@ -18,7 +42,7 @@ namespace ed {
 			int GetChannelSize() const;
 			int GetChannelCount() const;
 			bool IsFloatPixel()const;
-			bool Validate() const { return GetChannelCount() > 0 && GetChannelSize() > 0; }
+			bool Validate() const { return id != 0 && GetChannelCount() > 0 && GetChannelSize() > 0; }
 			bool HasAlpha() const { return GetChannelCount() == 4; }
 
 			static int GetChannelSize(GLenum type);
@@ -27,10 +51,10 @@ namespace ed {
 		};
 
 		struct EnvironmentTexture {
-			Texture m_originTexture;
-			Texture m_envTexture;
-			Texture m_irmapTexture;
-			Texture m_spBRDF_LUT;
+			TextureDesc m_originTexture;
+			TextureDesc m_envTexture;
+			TextureDesc m_irmapTexture;
+			TextureDesc m_spBRDF_LUT;
 			bool m_valid = false;
 		};
 
@@ -71,7 +95,8 @@ namespace ed {
 			std::string SavedPath[MAX_POSIBLE_TEXTURE];
 		};
 
-		bool SaveTextureToFile(Texture cubeTexture, const std::string& fileName, SavedTexturePathResult* savedResult = nullptr); //save the texture to file ; if its a float texture, extension will be forcely changed to .hdr;
+		bool SaveTextureToFile(TextureDesc cubeTexture, const std::string& fileName, 
+			bool flipYBeforeSave = true, SavedTexturePathResult* savedResult = nullptr); //save the texture to file ; if its a float texture, extension will be forcely changed to .hdr;
 	}
 
 	

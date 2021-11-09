@@ -60,9 +60,16 @@ namespace ed {
 
 			static Capacity m_capabilities;
 
-			static Texture createTextureInternal(GLenum target, int width, int height, GLenum format, GLenum type, GLenum internalformat, int levels = 0)
+			static TextureDesc createTextureInternal(GLenum target, int width, int height, GLenum format, GLenum type, GLenum internalformat, int levels = 0)
 			{
-				Texture texture;
+				TextureDesc texture;
+
+				glCreateTextures(target, 1, &texture.id);
+				glTextureStorage2D(texture.id, texture.levels, internalformat, width, height);
+				glTextureParameteri(texture.id, GL_TEXTURE_MIN_FILTER, texture.levels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+				glTextureParameteri(texture.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTextureParameterf(texture.id, GL_TEXTURE_MAX_ANISOTROPY_EXT, m_capabilities.maxAnisotropy);
+
 				texture.target = target;
 				texture.width = width;
 				texture.height = height;
@@ -70,18 +77,13 @@ namespace ed {
 				texture.format = format;
 				texture.type = type;
 				texture.internalFormat = internalformat;
-				assert(texture.Validate());//Make sure the format is valid
+				assert(texture.Validate()); //Make sure the format is valid
 
-				glCreateTextures(target, 1, &texture.id);
-				glTextureStorage2D(texture.id, texture.levels, internalformat, width, height);
-				glTextureParameteri(texture.id, GL_TEXTURE_MIN_FILTER, texture.levels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-				glTextureParameteri(texture.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glTextureParameterf(texture.id, GL_TEXTURE_MAX_ANISOTROPY_EXT, m_capabilities.maxAnisotropy);
 				return texture;
 			}
-			static Texture createTexture(const std::shared_ptr<class Image>& image, GLenum format, GLenum type, GLenum internalformat, int levels = 0)
+			static TextureDesc createTexture(const std::shared_ptr<class Image>& image, GLenum format, GLenum type, GLenum internalformat, int levels = 0)
 			{
-				Texture texture = createTextureInternal(
+				TextureDesc texture = createTextureInternal(
 					GL_TEXTURE_2D, image->width(), image->height(), format, type, internalformat, levels);
 				if (image->isHDR()) {
 					assert(type == GL_FLOAT);
@@ -165,14 +167,14 @@ namespace ed {
 			{ GL_RGB, 3 },
 			{ GL_RGBA, 4 },
 		};
-		int Texture::GetChannelCount() const
+		int TextureDesc::GetChannelCount() const
 		{
 			assert(GFormatToChannel.find(format) != GFormatToChannel.end());
 			int channelCount = GFormatToChannel[format];
 			return channelCount;
 		}
 
-		int Texture::GetChannelCount(GLenum format)
+		int TextureDesc::GetChannelCount(GLenum format)
 		{
 			assert(GFormatToChannel.find(format) != GFormatToChannel.end());
 			int channelCount = GFormatToChannel[format];
@@ -187,30 +189,31 @@ namespace ed {
 			//other wired type like SHORT_4_4_4_4 is not supported
 		};
 
-		int Texture::GetChannelSize()const
+		int TextureDesc::GetChannelSize()const
 		{
 			assert(GTypeToChannelSize.find(type) != GTypeToChannelSize.end());
 			return GTypeToChannelSize[type];
 		}
 
-		int Texture::GetChannelSize(GLenum type)
+		int TextureDesc::GetChannelSize(GLenum type)
 		{
 			assert(GTypeToChannelSize.find(type) != GTypeToChannelSize.end());
 			return GTypeToChannelSize[type];
 		}
 
-		bool Texture::IsFloatPixel() const
+		bool TextureDesc::IsFloatPixel() const
 		{
 			return type == GL_FLOAT || type == GL_HALF_FLOAT;
 		}
 
-		bool Texture::IsFloatPixel(GLenum type)
+		bool TextureDesc::IsFloatPixel(GLenum type)
 		{
 			return type == GL_FLOAT || type == GL_HALF_FLOAT;
 		}
 		//////////////////////////////////////////////////////////////////////////
 
-		bool SaveCubeTextureToFile(Texture cubeTexture, const std::string& fileName, SavedTexturePathResult* savedResult) // this save all 6 faces of cube map into images in harddrive
+		bool SaveCubeTextureToFile(TextureDesc cubeTexture, const std::string& fileName, bool flipYBeforeSave,
+			SavedTexturePathResult* savedResult) // this save all 6 faces of cube map into images in harddrive
 		{
 //https://community.khronos.org/t/output-cubemap-texture-object-as-bitmap-images/75445
 //Alter a lot
@@ -276,47 +279,62 @@ namespace ed {
 			auto extension = originName.extension().string();
 			std::string baseFileName = (dir / fileNameStem).string();
 
+			if (flipYBeforeSave) {
+				stbi_vertical_flip(&posXBuffer[0], width, height, pixelSize); 
+				stbi_vertical_flip(&negXBuffer[0], width, height, pixelSize); 
+				stbi_vertical_flip(&posYBuffer[0], width, height, pixelSize); 
+				stbi_vertical_flip(&negYBuffer[0], width, height, pixelSize); 
+				stbi_vertical_flip(&posZBuffer[0], width, height, pixelSize); 
+				stbi_vertical_flip(&negZBuffer[0], width, height, pixelSize); 
+			}
+
 			auto posXPath = baseFileName + ".posX" + extension;
 			if (!Image::writeFile(posXPath, width, height, channelCount, pixelSize * width, &posXBuffer[0]))
 				return false;
 			if (savedResult != nullptr)
-				savedResult->SavedPath[0] = posXPath;
+				savedResult->SavedPath[CubeFace_PositiveX] = posXPath;
 
 			auto negXPath = baseFileName + ".negX" + extension;
 			if (!Image::writeFile(negXPath, width, height, channelCount, pixelSize * width, &negXBuffer[0]))
 				return false;
 			if (savedResult != nullptr)
-				savedResult->SavedPath[1] = (negXPath);
+				savedResult->SavedPath[CubeFace_NegativeX] = (negXPath);
 
 			auto posYPath = baseFileName + ".posY" + extension;
 			if (!Image::writeFile(posYPath, width, height, channelCount, pixelSize * width, &posYBuffer[0]))
 				return false;
 			if (savedResult != nullptr)
-				savedResult->SavedPath[2] = (posYPath);
+				savedResult->SavedPath[CubeFace_PositiveY] = (posYPath);
 
 			auto negYPath = baseFileName + ".negY" + extension;
 			if (!Image::writeFile(negYPath, width, height, channelCount, pixelSize * width, &negYBuffer[0]))
 				return false;
 			if (savedResult != nullptr)
-				savedResult->SavedPath[3] = (negYPath);
+				savedResult->SavedPath[CubeFace_NegativeY] = (negYPath);
 
 			auto posZPath = baseFileName + ".posZ" + extension;
 			if (!Image::writeFile(posZPath, width, height, channelCount, pixelSize * width, &posZBuffer[0]))
 				return false;
 			if (savedResult != nullptr)
-				savedResult->SavedPath[4] =(posZPath);
+				savedResult->SavedPath[CubeFace_PositiveZ] = (posZPath);
 
 			auto negZPath = baseFileName + ".negZ" + extension;
 			if (!Image::writeFile(negZPath, width, height, channelCount, pixelSize * width, &negZBuffer[0]))
 				return false;
 			if (savedResult != nullptr)
-				savedResult->SavedPath[5] = (negZPath);
+				savedResult->SavedPath[CubeFace_NegativeZ] = (negZPath);
+
+			//In case omit something, check again
+			for (auto& s : savedResult->SavedPath)
+			{
+				assert(!s.empty());
+			}
 
 #endif
 			return true;
 		}
 
-		bool Save2DTextureToFile(Texture textureInput, const std::string& fileName)
+		bool Save2DTextureToFile(TextureDesc textureInput, bool flipYBeforeSave, const std::string& fileName)
 		{
 
 			int channelCountPretest = textureInput.GetChannelCount();
@@ -366,13 +384,16 @@ namespace ed {
 				preview.Draw(textureInput.id);
 
 				//then get the value
-				int channelCount = Texture::GetChannelCount(previewFormat);
-				int pixelSize = Texture::GetChannelSize(previewType) * channelCount;
+				int channelCount = TextureDesc::GetChannelCount(previewFormat);
+				int pixelSize = TextureDesc::GetChannelSize(previewType) * channelCount;
 
 				size_t bufferSize = pixelSize * textureInput.width * textureInput.width;
 				std::vector<uint8_t> buffer(bufferSize);
 
 				glReadPixels(0, 0, textureInput.width, textureInput.height, previewFormat, previewType, &buffer[0]);
+
+				if (flipYBeforeSave)
+					stbi_vertical_flip(&buffer[0], textureInput.width, textureInput.height, pixelSize); 
 
 				/*GLuint fbo;
 				glGenFramebuffers(1, &fbo);
@@ -389,7 +410,7 @@ namespace ed {
 			}
 		}
 
-		bool SaveTextureToFile(Texture textureInput, const std::string& fileName, SavedTexturePathResult* savedResult) // this save all 6 faces of cube map into images in harddrive
+		bool SaveTextureToFile(TextureDesc textureInput, const std::string& fileName, bool flipYBeforeSave, SavedTexturePathResult* savedResult) // this save all 6 faces of cube map into images in harddrive
 		{
 			std::string fileNameUsing = fileName;
 			if (textureInput.IsFloatPixel()) {
@@ -400,10 +421,10 @@ namespace ed {
 			}
 
 			if (textureInput.target == GL_TEXTURE_CUBE_MAP) {
-				if (!SaveCubeTextureToFile(textureInput, fileNameUsing, savedResult))
+				if (!SaveCubeTextureToFile(textureInput, fileNameUsing, flipYBeforeSave, savedResult))
 					return false;
 			} else if (textureInput.target == GL_TEXTURE_2D) {
-				if (!Save2DTextureToFile(textureInput, fileNameUsing))
+				if (!Save2DTextureToFile(textureInput, flipYBeforeSave, fileNameUsing))
 					return false;
 				if (savedResult != nullptr)
 					savedResult->SavedPath[0] = fileNameUsing;
@@ -424,7 +445,7 @@ namespace ed {
 			//Global
 			glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 			// Unfiltered environment cube map (temporary).
-			Texture envTextureUnfiltered = Renderer::createTextureInternal(
+			TextureDesc envTextureUnfiltered = Renderer::createTextureInternal(
 				GL_TEXTURE_CUBE_MAP, kEnvMapSize, kEnvMapSize, cubeFormat, cubeType, cubInternalFormat);
 
 			// Load & convert equirectangular environment map to a cubemap texture.
@@ -439,7 +460,7 @@ namespace ed {
 
 				// The input use a specific format
 
-				Texture envTextureEquirect = Renderer::createTexture(image, GL_RGB,
+				TextureDesc envTextureEquirect = Renderer::createTexture(image, GL_RGB,
 					image->isHDR() ? GL_FLOAT : GL_UNSIGNED_BYTE,
 					GL_RGB16F, 1);
 				et.m_originTexture = envTextureEquirect;

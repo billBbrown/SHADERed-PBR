@@ -35,7 +35,7 @@ void main()
 {
     vec2 localUV = uv;
 
-    fragColor = textureLod(textureMap, localUV, 0);
+    fragColor = clamp(textureLod(textureMap, localUV, 0), vec4(0.0f), vec4(1.0f));
 }
 )";
 

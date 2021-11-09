@@ -2252,7 +2252,7 @@ namespace ed {
 	}
 	void GUIManager::CreateNewTexture()
 	{
-		ifd::FileDialog::Instance().Open("CreateTextureDlg", "Select texture(s)", "Image file (*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds){.png,.jpg,.jpeg,.bmp,.tga,.dds},.*", true);
+		ifd::FileDialog::Instance().Open("CreateTextureDlg", "Select texture(s)", "Image file (*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds;*.hdr){.png,.jpg,.jpeg,.bmp,.tga,.dds,.hdr},.*", true);
 	}
 	void GUIManager::CreateNewTexture3D()
 	{
@@ -2515,7 +2515,7 @@ namespace ed {
 			ImGui::SetCursorPosX(ImGui::GetWindowWidth() - btnWidth);
 			if (ImGui::Button("Change##left")) {
 				m_cubemapPathPtr = &left;
-				ifd::FileDialog::Instance().Open("CubemapFaceDlg", "Select cubemap face - left", "Image file (*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds){.png,.jpg,.jpeg,.bmp,.tga,.dds},.*");
+				ifd::FileDialog::Instance().Open("CubemapFaceDlg", "Select cubemap face - left", "Image file (*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds;*.hdr){.png,.jpg,.jpeg,.bmp,.tga,.dds,.hdr},.*");
 			}
 
 			ImGui::Text("Top: %s", std::filesystem::path(top).filename().string().c_str());
@@ -2523,7 +2523,7 @@ namespace ed {
 			ImGui::SetCursorPosX(ImGui::GetWindowWidth() - btnWidth);
 			if (ImGui::Button("Change##top")) {
 				m_cubemapPathPtr = &top;
-				ifd::FileDialog::Instance().Open("CubemapFaceDlg", "Select cubemap face - top", "Image file (*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds){.png,.jpg,.jpeg,.bmp,.tga,.dds},.*");
+				ifd::FileDialog::Instance().Open("CubemapFaceDlg", "Select cubemap face - top", "Image file (*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds;*.hdr){.png,.jpg,.jpeg,.bmp,.tga,.dds,.hdr},.*");
 			}
 
 			ImGui::Text("Front: %s", std::filesystem::path(front).filename().string().c_str());
@@ -2531,7 +2531,7 @@ namespace ed {
 			ImGui::SetCursorPosX(ImGui::GetWindowWidth() - btnWidth);
 			if (ImGui::Button("Change##front")) {
 				m_cubemapPathPtr = &front;
-				ifd::FileDialog::Instance().Open("CubemapFaceDlg", "Select cubemap face - front", "Image file (*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds){.png,.jpg,.jpeg,.bmp,.tga,.dds},.*");
+				ifd::FileDialog::Instance().Open("CubemapFaceDlg", "Select cubemap face - front", "Image file (*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds;*.hdr){.png,.jpg,.jpeg,.bmp,.tga,.dds,.hdr},.*");
 			}
 
 			ImGui::Text("Bottom: %s", std::filesystem::path(bottom).filename().string().c_str());
@@ -2539,7 +2539,7 @@ namespace ed {
 			ImGui::SetCursorPosX(ImGui::GetWindowWidth() - btnWidth);
 			if (ImGui::Button("Change##bottom")) {
 				m_cubemapPathPtr = &bottom;
-				ifd::FileDialog::Instance().Open("CubemapFaceDlg", "Select cubemap face - bottom", "Image file (*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds){.png,.jpg,.jpeg,.bmp,.tga,.dds},.*");
+				ifd::FileDialog::Instance().Open("CubemapFaceDlg", "Select cubemap face - bottom", "Image file (*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds;*.hdr){.png,.jpg,.jpeg,.bmp,.tga,.dds,.hdr},.*");
 			}
 
 			ImGui::Text("Right: %s", std::filesystem::path(right).filename().string().c_str());
@@ -2547,7 +2547,7 @@ namespace ed {
 			ImGui::SetCursorPosX(ImGui::GetWindowWidth() - btnWidth);
 			if (ImGui::Button("Change##right")) {
 				m_cubemapPathPtr = &right;
-				ifd::FileDialog::Instance().Open("CubemapFaceDlg", "Select cubemap face - right", "Image file (*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds){.png,.jpg,.jpeg,.bmp,.tga,.dds},.*");
+				ifd::FileDialog::Instance().Open("CubemapFaceDlg", "Select cubemap face - right", "Image file (*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds;*.hdr){.png,.jpg,.jpeg,.bmp,.tga,.dds,.hdr},.*");
 			}
 
 			ImGui::Text("Back: %s", std::filesystem::path(back).filename().string().c_str());
@@ -2555,7 +2555,7 @@ namespace ed {
 			ImGui::SetCursorPosX(ImGui::GetWindowWidth() - btnWidth);
 			if (ImGui::Button("Change##back")) {
 				m_cubemapPathPtr = &back;
-				ifd::FileDialog::Instance().Open("CubemapFaceDlg", "Select cubemap face - back", "Image file (*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds){.png,.jpg,.jpeg,.bmp,.tga,.dds},.*");
+				ifd::FileDialog::Instance().Open("CubemapFaceDlg", "Select cubemap face - back", "Image file (*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds;*.hdr){.png,.jpg,.jpeg,.bmp,.tga,.dds,.hdr},.*");
 			}
 
 			if (ifd::FileDialog::Instance().IsDone("CubemapFaceDlg")) {

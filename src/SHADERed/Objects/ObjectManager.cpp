@@ -134,7 +134,7 @@ namespace ed {
 		Clear();
 	}
 
-	void loadCubemapFace(GLuint face, const std::string& path, int& w, int& h, TextureHelper::Texture* outputDetail)
+	void loadCubemapFace(GLuint face, const std::string& path, int& w, int& h, TextureHelper::TextureDesc* outputDetail)
 	{
 		stbi_set_flip_vertically_on_load(0);
 
@@ -167,7 +167,7 @@ namespace ed {
 		GLenum internalFormat = isFloat ? GL_RGBA32F : GL_RGBA8;
 
 		if (outputDetail != nullptr) {
-			TextureHelper::Texture& texture = *outputDetail;
+			TextureHelper::TextureDesc& texture = *outputDetail;
 			texture.target = GL_TEXTURE_2D;
 			texture.width = w;
 			texture.height = h;
@@ -175,7 +175,7 @@ namespace ed {
 			texture.format = format;
 			texture.type = type;
 			texture.internalFormat = internalFormat;
-			assert(texture.Validate()); //Make sure the format is valid
+			//assert(texture.Validate()); //It's not valid right not
 		}
 
 		glTexImage2D(
@@ -302,9 +302,9 @@ namespace ed {
 		ObjectManagerItem* item = new ObjectManagerItem(file, ObjectType::Texture);
 		m_items.push_back(item);
 
-		GLuint internalFormat = GL_RGBA8; //It used to be GL_RGBA, but since type is always GL_UNSIGNED_BYTE, not SHORT4444 alike, GL_RGBA8 is more precise
+		GLuint internalFormat = isFloat ? GL_RGBA32F : GL_RGBA8; //It used to be GL_RGBA, but since type is always GL_UNSIGNED_BYTE, not SHORT4444 alike, GL_RGBA8 is more precise
 		GLenum format = GL_RGBA;
-		GLenum type = GL_UNSIGNED_BYTE;
+		GLenum type = isFloat? GL_FLOAT : GL_UNSIGNED_BYTE;
 
 		// normal texture
 		glGenTextures(1, &item->Texture);
@@ -339,8 +339,9 @@ namespace ed {
 		item->TextureSize = glm::ivec2(width, height);
 
 		{
-			item->TextureDetail.reset(new TextureHelper::Texture);
-			TextureHelper::Texture& texture = *item->TextureDetail;
+			item->TextureDetail.reset(new TextureHelper::TextureDesc);
+			TextureHelper::TextureDesc& texture = *item->TextureDetail;
+			texture.id = item->Texture;
 			texture.target = GL_TEXTURE_2D;
 			texture.width = width;
 			texture.height = height;
@@ -399,8 +400,9 @@ namespace ed {
 		glBindTexture(GL_TEXTURE_3D, 0);
 
 		{
-			item->TextureDetail.reset(new TextureHelper::Texture);
-			TextureHelper::Texture& texture = *item->TextureDetail;
+			item->TextureDetail.reset(new TextureHelper::TextureDesc);
+			TextureHelper::TextureDesc& texture = *item->TextureDetail;
+			texture.id = item->Texture;
 			texture.target = GL_TEXTURE_2D;
 			texture.width = ddsImage->header.width;
 			texture.height = ddsImage->header.height;
@@ -417,6 +419,12 @@ namespace ed {
 		dds_image_free(ddsImage);
 
 		return true;
+	}
+	bool ObjectManager::CreateCubemap(const std::string& name,
+		const std::string (&paths)[6])
+	{
+		return CreateCubemap(name, paths[CubeFace_Left], paths[CubeFace_Top], paths[CubeFace_Front], 
+			paths[CubeFace_Bottom], paths[CubeFace_Right], paths[CubeFace_Back]);	
 	}
 	bool ObjectManager::CreateCubemap(const std::string& name, 
 		const std::string& left, const std::string& top, const std::string& front, 
@@ -453,7 +461,7 @@ namespace ed {
 		int width = 0, height = 0;
 		int width2 = 0, height2 = 0;
 
-		item->TextureDetail.reset(new TextureHelper::Texture());
+		item->TextureDetail.reset(new TextureHelper::TextureDesc());
 		// left face
 		loadCubemapFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, m_parser->GetProjectPath(left), width, height, item->TextureDetail.get());
 		item->CubemapPaths.push_back(left);
@@ -499,6 +507,9 @@ namespace ed {
 		loadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, m_parser->GetProjectPath(back), width2, height2, nullptr);
 		item->CubemapPaths.push_back(back);
 
+		item->TextureDetail->id = item->Texture; //Final set the id to make it valid
+		assert(item->TextureDetail->Validate());
+
 		// clean up
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 		item->TextureSize = glm::ivec2(width, height);
@@ -538,9 +549,11 @@ namespace ed {
 			std::string projectPath = m_parser->GetProjectPath("");
 			std::string saveFileNameBase = (projectPath / std::filesystem::path("textures") / stem).string();
 
+			bool flipYBeforeSave = true;
+
 			TextureHelper::SavedTexturePathResult envTextureResult;
 			if (!TextureHelper::SaveTextureToFile(et.m_envTexture,
-				saveFileNameBase + "[Env]" + ItermediateTextureExtensionNoFloat, &envTextureResult)) {
+					saveFileNameBase + "[Env]" + ItermediateTextureExtensionNoFloat, flipYBeforeSave, &envTextureResult)) {
 				Logger::Get().Log("Cannot create environment texture: " + file + " because env cube save failed", 
 					true);
 				return false;
@@ -548,7 +561,7 @@ namespace ed {
 
 			TextureHelper::SavedTexturePathResult irTextureResult;
 			if (!TextureHelper::SaveTextureToFile(et.m_irmapTexture,
-					saveFileNameBase + "[Ir]" + ItermediateTextureExtensionNoFloat, &irTextureResult)) {
+					saveFileNameBase + "[Ir]" + ItermediateTextureExtensionNoFloat, flipYBeforeSave, &irTextureResult)) {
 				Logger::Get().Log("Cannot create environment texture: " + file + " because ir cube save failed", 
 					true);
 				return false;
@@ -556,14 +569,13 @@ namespace ed {
 
 			TextureHelper::SavedTexturePathResult spBRDF_LUTResult;
 			if (!SaveTextureToFile(et.m_spBRDF_LUT,
-					saveFileNameBase + "[Lut]" + ItermediateTextureExtensionNoFloat, &spBRDF_LUTResult)) {
+					saveFileNameBase + "[Lut]" + ItermediateTextureExtensionNoFloat, flipYBeforeSave, &spBRDF_LUTResult)) {
 				Logger::Get().Log("Cannot create environment texture: " + file + " because lut save failed", true);
 				return false;
 			}
 		
 			//Need to wait for all textures created then add object
-			if (!CreateCubemap(file, envTextureResult.SavedPath[0], envTextureResult.SavedPath[1], envTextureResult.SavedPath[2],
-					envTextureResult.SavedPath[3], envTextureResult.SavedPath[4], envTextureResult.SavedPath[5])) {
+			if (!CreateCubemap(file, envTextureResult.SavedPath)) {
 				Logger::Get().Log("Cannot create environment texture: " + file + " because env cube recreation failed",
 					true);
 				return false;
@@ -571,8 +583,7 @@ namespace ed {
 			
 			//TO DELETE item->EnvironmentTypeValue = EnvironmentType::Main;
 			
-			if (!CreateCubemap(filePathNoExt.string() + ".ir.hdr", irTextureResult.SavedPath[0], irTextureResult.SavedPath[1],
-					irTextureResult.SavedPath[2], irTextureResult.SavedPath[3], irTextureResult.SavedPath[4], irTextureResult.SavedPath[5])) {
+			if (!CreateCubemap(filePathNoExt.string() + ".ir.hdr", irTextureResult.SavedPath)) {
 				Logger::Get().Log("Cannot create environment texture: " + file + " because ir cube recreation failed",
 					true);
 				return false;
