@@ -17,7 +17,8 @@
 
 namespace ed {
 	namespace gl {
-		GLuint CreateSimpleFramebuffer(GLint width, GLint height, GLuint& texColor, GLuint& texDepth, GLuint fmt = GL_RGBA);
+		GLuint CreateSimpleFramebuffer(GLint width, GLint height, GLuint& texColor, GLuint& texDepth, 
+			GLuint internalfmt = GL_RGBA, GLenum format=GL_RGBA, GLenum type = GL_UNSIGNED_BYTE);
 		void FreeSimpleFramebuffer(GLuint& fbo, GLuint& color, GLuint& depth);
 
 		GLuint CreateShader(const char** vsCode, const char** psCode, const std::string& name = "");

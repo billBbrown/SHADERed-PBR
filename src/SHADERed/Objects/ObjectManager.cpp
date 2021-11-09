@@ -11,7 +11,6 @@
 #include <unordered_map>
 #include <fstream>
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <misc/stb_image.h>
 #include <misc/stb_image_write.h>
 
@@ -439,6 +438,8 @@ namespace ed {
 	}
 	bool ObjectManager::CreateTextureEnvironment(const std::string& file)
 	{
+		constexpr char ItermediateTextureExtensionNoFloat[] = ".tga";//tga is better for review
+
 		Logger::Get().Log("Creating a environment texture " + file + " ...");
 
 		if (Exists(file)) {
@@ -453,11 +454,23 @@ namespace ed {
 			return false;
 
 		auto filePath = std::filesystem::path(file);
+		auto dir = filePath.parent_path();
 		auto stem = filePath.stem();
+		
 		auto filePathNoExt = stem;
 
+		
 		m_parser->ModifyProject();
 		
+		{
+			std::string projectPath = m_parser->GetProjectPath("");
+			std::string saveFileNameBase = (projectPath / std::filesystem::path("textures") / stem).string();
+
+			SaveTextureToFile(et.m_envTexture, saveFileNameBase + "[Env]" + ItermediateTextureExtensionNoFloat);
+			SaveTextureToFile(et.m_irmapTexture, saveFileNameBase + "[Ir]" + ItermediateTextureExtensionNoFloat);
+			SaveTextureToFile(et.m_spBRDF_LUT, saveFileNameBase + "[Lut]" + ItermediateTextureExtensionNoFloat);
+		}
+
 		{
 			ObjectManagerItem* item = new ObjectManagerItem(file, ObjectType::CubeMap);//Only main can be stored
 			m_items.push_back(item);

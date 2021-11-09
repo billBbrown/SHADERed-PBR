@@ -13,6 +13,7 @@ class Image
 {
 public:
 	static std::shared_ptr<Image> fromFile(const std::string& filename, int channels=4);
+	static bool writeFile(const std::string& filename, int width, int height, int channels, int strideByteOfARow, void* data);
 
 	int width() const { return m_width; }
 	int height() const { return m_height; }

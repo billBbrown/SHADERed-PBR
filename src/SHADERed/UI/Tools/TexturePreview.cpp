@@ -35,7 +35,7 @@ void main()
 {
     vec2 localUV = uv;
 
-    fragColor = clamp(textureLod(textureMap, localUV, 0), vec4(0), vec4(1));
+    fragColor = textureLod(textureMap, localUV, 0);
 }
 )";
 
@@ -48,13 +48,14 @@ namespace ed {
 		glDeleteTextures(1, &m_backDepth);
 		glDeleteFramebuffers(1, &m_backFBO);
 	}
-	void TexturePreview::Init(int w, int h)
+	void TexturePreview::Init(int w, int h, GLuint internalFormat /*= GL_RGBA*/, GLenum format /*= GL_RGBA*/, GLenum type /*= GL_UNSIGNED_BYTE*/)
 	{
 		Logger::Get().Log("Setting up textureMap preview system...");
 
 		m_w = w;
 		m_h = h;
-
+		//If change this , also need to change GetChannelCount()
+		
 		m_backShader = ed::gl::CreateShader(&TEXTUREMAP_VS_CODE, &TEXTUREMAP_PS_CODE, "textureMap projection");
 
 		glUseProgram(m_backShader);
@@ -63,7 +64,10 @@ namespace ed {
 		glUseProgram(0);
 
 		m_fsVAO = ed::eng::GeometryFactory::CreatePlane(m_fsVBO, w, h, gl::CreateDefaultInputLayout());
-		m_backFBO = gl::CreateSimpleFramebuffer(w, h, m_backTex, m_backDepth);
+		m_backFBO = gl::CreateSimpleFramebuffer(w, h, m_backTex, m_backDepth, 
+			internalFormat, 
+			format, 
+			type);
 
 		if (m_backFBO == 0)
 			ed::Logger::Get().Log("Failed to create textureMap preview texture", true);
