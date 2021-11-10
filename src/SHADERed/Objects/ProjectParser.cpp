@@ -1014,6 +1014,14 @@ namespace ed {
 		out << data;
 		out.close();
 	}
+
+	std::string GetNormalizedPath(const std::filesystem::path& in) {
+		std::string normalized = in.lexically_normal().string();
+		//Since this app use / everywhere, and windows can adapt to /, we should all use /.
+		std::replace(normalized.begin(), normalized.end(), '\\', '/');
+		return normalized;
+	}
+
 	std::string ProjectParser::GetRelativePath(const std::string& to)
 	{
 		std::filesystem::path fFrom(m_projectPath);
@@ -1021,11 +1029,11 @@ namespace ed {
 
 #if defined(_WIN32)
 		if (fTo.is_absolute())
-			if (fTo.root_name() != fFrom.root_name()) // not on the same drive
-				return to;
+			if (0 != stricmp(fTo.root_name().string().c_str(), fFrom.root_name().string().c_str())) // not on the same drive; windows is case insensitive, we need to compare them in ignore-case mode
+				return GetNormalizedPath(fTo);
 #endif
 
-		return std::filesystem::relative(fTo, fFrom).string();
+		return GetNormalizedPath(std::filesystem::relative(fTo, fFrom)); 
 	}
 	std::string ProjectParser::GetProjectPath(const std::string& to)
 	{

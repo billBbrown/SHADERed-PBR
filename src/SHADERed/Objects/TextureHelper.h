@@ -48,6 +48,13 @@ namespace ed {
 			static int GetChannelSize(GLenum type);
 			static int GetChannelCount(GLenum format);
 			static bool IsFloatPixel(GLenum type);
+
+			void Destroy() {
+				GLuint idToDestroy = this->id;
+				glDeleteTextures(1, &idToDestroy);
+
+				this->id = 0;  //Make it invalid
+			}
 		};
 
 		struct EnvironmentTexture {
@@ -56,6 +63,14 @@ namespace ed {
 			TextureDesc m_irmapTexture;
 			TextureDesc m_spBRDF_LUT;
 			bool m_valid = false;
+
+			void Destroy() {
+				m_originTexture.Destroy();
+				m_envTexture.Destroy();
+				m_irmapTexture.Destroy();
+				m_spBRDF_LUT.Destroy();
+				m_valid = false;
+			}
 		};
 
 		//////////////////////////////////////////////////////////////////////////

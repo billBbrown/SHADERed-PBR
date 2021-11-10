@@ -60,7 +60,7 @@ void main()
     }
     else discard;
 
-    fragColor = textureLod(cubemap, dir, 0);
+    fragColor = textureLod(cubemap, dir, 0); //Need to use lod == 0, otherwise may blur out, we may need combobox like what's in renderdoc to let user select lod
 }
 )";
 

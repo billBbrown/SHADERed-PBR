@@ -555,7 +555,7 @@ namespace ed {
 
 			TextureHelper::SavedTexturePathResult envTextureResult;
 			if (!TextureHelper::SaveTextureToFile(et.m_envTexture,
-					saveFileNameBase + "[Env]" + ItermediateTextureExtensionNoFloat, flipYBeforeSave, &envTextureResult)) {
+					saveFileNameBase + ".sp" + ItermediateTextureExtensionNoFloat, flipYBeforeSave, &envTextureResult)) {
 				Logger::Get().Log("Cannot create environment texture: " + file + " because env cube save failed", 
 					true);
 				return false;
@@ -563,7 +563,7 @@ namespace ed {
 
 			TextureHelper::SavedTexturePathResult irTextureResult;
 			if (!TextureHelper::SaveTextureToFile(et.m_irmapTexture,
-					saveFileNameBase + "[Ir]" + ItermediateTextureExtensionNoFloat, flipYBeforeSave, &irTextureResult)) {
+					saveFileNameBase + ".ir" + ItermediateTextureExtensionNoFloat, flipYBeforeSave, &irTextureResult)) {
 				Logger::Get().Log("Cannot create environment texture: " + file + " because ir cube save failed", 
 					true);
 				return false;
@@ -571,13 +571,13 @@ namespace ed {
 
 			TextureHelper::SavedTexturePathResult spBRDF_LUTResult;
 			if (!SaveTextureToFile(et.m_spBRDF_LUT,
-					saveFileNameBase + "[Lut]" + ItermediateTextureExtensionNoFloat, flipYBeforeSave, &spBRDF_LUTResult)) {
+					saveFileNameBase + ".lut" + ItermediateTextureExtensionNoFloat, flipYBeforeSave, &spBRDF_LUTResult)) {
 				Logger::Get().Log("Cannot create environment texture: " + file + " because lut save failed", true);
 				return false;
 			}
 		
 			//Need to wait for all textures created then add object
-			if (!CreateCubemap(file, envTextureResult.SavedPath)) {
+			if (!CreateCubemap(filePathNoExt.string() + ".sp.hdr", envTextureResult.SavedPath)) {
 				Logger::Get().Log("Cannot create environment texture: " + file + " because env cube recreation failed",
 					true);
 				return false;
@@ -589,20 +589,23 @@ namespace ed {
 				return false;
 			}
 
-
 			if (!CreateTexture(spBRDF_LUTResult.SavedPath[0])) {
 				Logger::Get().Log("Cannot create environment texture: " + file + " because lut recreation failed",
 					true);
 				return false;
 			}
+
+			//Also add the origin one as a normal texture, in case someone need a lat-long sky cube; If someone dont like it, just delete it, no big deal.
+			if (!CreateTexture(file)) {
+				Logger::Get().Log("Cannot create environment texture: " + file + " because origin texture recreation failed",
+					true);
+				return false;
+			}
 		}
-		//Also add the origin one, in case someone need a lat-long sky cube; If someone dont like it, just delete it, no big deal.
-		{
-			ObjectManagerItem* item = new ObjectManagerItem(filePathNoExt.string() + ".origin.hdr", ObjectType::Texture); //Only main can be stored
-			m_items.push_back(item);
-			item->Texture = et.m_originTexture.id;
-			item->TextureSize = glm::ivec2(et.m_originTexture.width, et.m_originTexture.height);
-		}		
+
+		//Now all the texture has created, destroy the old ones
+		et.Destroy();
+		assert(!et.m_valid);
 
 		return true;
 	}
@@ -1353,7 +1356,7 @@ namespace ed {
 	}
 	void ObjectManager::SaveToFile(ObjectManagerItem* item, const std::string& filepath)
 	{
-		if (item->Type != ObjectType::Texture && item->Type != ObjectType::CubeMap) {
+		if (item->Type != ObjectType::Texture && item->Type != ObjectType::CubeMap && item->Type != ObjectType::Image) {
 			return;
 		}
 
