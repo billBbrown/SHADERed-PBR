@@ -84,14 +84,6 @@ namespace ed {
 		void* Data;
 	};
 
-	enum class EnvironmentType : uint8_t {
-		None = 0,
-		Main = 1, //Cube map for IBL specular 
-		Origin = 2,  //Origin Lat-long texture for inspection or other further usage
-		Iradiance,  //Cube map for IBL irradiance
-		BrdfLut  //Lut map for IBL specular brdf
-	};
-
 	/* object - TODO: maybe inheritance? class ImageObject : public ObjectManagerItem -> though, too many changes */
 	class ObjectManagerItem {
 	public:
@@ -106,8 +98,6 @@ namespace ed {
 		std::unique_ptr<TextureHelper::TextureDesc> TextureDetail; //Save more detail
 		GLuint Texture, FlippedTexture;
 		std::vector<std::string> CubemapPaths;
-		
-		EnvironmentType EnvironmentTypeValue;
 
 		bool Texture_VFlipped;
 		GLuint Texture_MinFilter, Texture_MagFilter, Texture_WrapS, Texture_WrapT, Texture_WrapR;

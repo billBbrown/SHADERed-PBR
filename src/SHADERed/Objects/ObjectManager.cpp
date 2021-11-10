@@ -520,6 +520,8 @@ namespace ed {
 	}
 	bool ObjectManager::CreateTextureEnvironment(const std::string& file)
 	{
+		//This function is used to convert a lat-long hdr to reflection cubemap, ir cubemap, and ibl lut table map
+		//It used to be 
 		constexpr char ItermediateTextureExtensionNoFloat[] = ".tga";//tga is better for review
 
 		Logger::Get().Log("Creating a environment texture " + file + " ...");
@@ -580,8 +582,6 @@ namespace ed {
 					true);
 				return false;
 			}
-			
-			//TO DELETE item->EnvironmentTypeValue = EnvironmentType::Main;
 			
 			if (!CreateCubemap(filePathNoExt.string() + ".ir.hdr", irTextureResult.SavedPath)) {
 				Logger::Get().Log("Cannot create environment texture: " + file + " because ir cube recreation failed",

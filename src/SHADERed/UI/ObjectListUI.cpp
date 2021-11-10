@@ -62,13 +62,6 @@ namespace ed {
 					itemText = itemText.substr(lastSlash + 1);
 			}
 
-			if (oItem->Type == ObjectType::CubeMap && oItem->EnvironmentTypeValue == EnvironmentType::Main) {
-				size_t lastSlash = oItem->Name.find_last_of("/\\");
-
-				if (lastSlash != std::string::npos && !isPluginOwner)
-					itemText = itemText.substr(lastSlash + 1);
-			}
-
 			PluginObject* pobj = oItem->Plugin;
 
 			bool isBuf = (oItem->Type == ObjectType::Buffer);
@@ -90,7 +83,7 @@ namespace ed {
 					m_cubePrev.Draw(tex);
 					ImGui::Image((void*)(intptr_t)m_cubePrev.GetTexture(), ImVec2(IMAGE_CONTEXT_WIDTH, ((float)imgWH) * IMAGE_CONTEXT_WIDTH), ImVec2(0, 1), ImVec2(1, 0));
 				} else if (!isBuf && !isImg3D && !isPluginOwner) {
-					m_texPrev.Draw(tex);
+					m_texPrev.Draw(tex); //Use texture preview to adapt float texture to regular UI
 					ImGui::Image((void*)(intptr_t)m_texPrev.GetTexture(), ImVec2(IMAGE_CONTEXT_WIDTH, ((float)imgWH) * IMAGE_CONTEXT_WIDTH), ImVec2(0, 1), ImVec2(1, 0));
 				} else if (hasPluginPreview)
 					pobj->Owner->Object_ShowPreview(pobj->Type, pobj->Data, pobj->ID);
@@ -113,7 +106,7 @@ namespace ed {
 					m_tex3DPrev.Draw(tex, IMAGE_CONTEXT_WIDTH, ((float)imgWH) * IMAGE_CONTEXT_WIDTH);
 					ImGui::Image((void*)(intptr_t)m_tex3DPrev.GetTexture(), ImVec2(IMAGE_CONTEXT_WIDTH, ((float)imgWH) * IMAGE_CONTEXT_WIDTH));
 				} else if (!isBuf && !isImg3D && !isPluginOwner) {
-					m_texPrev.Draw(tex);
+					m_texPrev.Draw(tex); //Use texture preview to adapt float texture to regular UI
 					ImGui::Image((void*)(intptr_t)m_texPrev.GetTexture(), ImVec2(IMAGE_CONTEXT_WIDTH, ((float)imgWH) * IMAGE_CONTEXT_WIDTH), ImVec2(0, 1), ImVec2(1, 0));
 				} else if (hasPluginPreview)
 					pobj->Owner->Object_ShowPreview(pobj->Type, pobj->Data, pobj->ID);
