@@ -1373,8 +1373,12 @@ namespace ed {
 				ImGui::PopItemFlag();
 				ImGui::PopItemWidth();
 				ImGui::SameLine();
-				if (ImGui::Button("...##pui_texbtn", ImVec2(-1, 0)))
-					ifd::FileDialog::Instance().Open("PropertyTextureDlg", "Select a texture", "Image file (*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds){.png,.jpg,.jpeg,.bmp,.tga,.dds},.*");
+				if (!IsCubeMap()) {
+					if (ImGui::Button("...##pui_texbtn", ImVec2(-1, 0)))
+						ifd::FileDialog::Instance().Open("PropertyTextureDlg", "Select a texture", "Image file (*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds){.png,.jpg,.jpeg,.bmp,.tga,.dds},.*");
+				} else {
+					ImGui::Text("");
+				}
 				ImGui::NextColumn();
 				ImGui::Separator();
 

@@ -980,7 +980,7 @@ namespace ed {
 		return ret;
 	}
 
-	bool ObjectManager::ReloadTexture(ObjectManagerItem* item, const std::string& newPath)
+	bool ObjectManager::ReloadTexture(ObjectManagerItem* item, const std::string& newPath, bool forcely/* = false*/)
 	{
 		stbi_set_flip_vertically_on_load(1);
 
@@ -989,27 +989,41 @@ namespace ed {
 				std::string path = m_parser->GetProjectPath(newPath);
 				int width = 0, height = 0, depth = 0;
 				unsigned char* data = nullptr;
+				bool isFloat = false;
 				dds_image_t ddsImage = nullptr;
 
 				bool isDDS = (std::filesystem::path(path).extension().u8string() == ".dds");
-				if (!isDDS) {
-					int nrChannels = 0;
-					stbi_load(path.c_str(), &width, &height, &nrChannels, STBI_rgb_alpha);
-				} else {
+				
+				if (isDDS) {
 					ddsImage = dds_load_from_file(path.c_str());
 
 					data = ddsImage->pixels;
 					width = ddsImage->header.width;
 					height = ddsImage->header.height;
 					depth = ddsImage->header.depth;
+				} else {
+					int nrChannels = 0;
+					stbi_set_flip_vertically_on_load(1);
+					if (stbi_is_hdr(path.c_str())) {
+						data = (unsigned char*)stbi_loadf(path.c_str(), &width, &height, &nrChannels, STBI_rgb_alpha);
+						isFloat = true;
+					} else {
+						data = stbi_load(path.c_str(), &width, &height, &nrChannels, STBI_rgb_alpha);
+					}
 				}
 		
-				if (data == nullptr || (isDDS && ddsImage == nullptr) || (item->Type == ObjectType::Texture3D && depth == 0))
+				if (data == nullptr || width == 0 || height == 0 ||(isDDS && ddsImage == nullptr) || (item->Type == ObjectType::Texture3D && depth == 0)){ 
+					Logger::Get().Log("Failed to load a texture " + newPath + " from file", true);
 					return false;
+				}
 
-				if (m_items[i]->Name != newPath) {
-					m_items[i]->Name = newPath;
+				if (forcely) {
 					m_parser->ModifyProject();
+				}else {
+					if (m_items[i]->Name != newPath) {
+						m_items[i]->Name = newPath;
+						m_parser->ModifyProject();
+					}
 				}
 
 				if (item->Type == ObjectType::Texture3D) {
@@ -1019,22 +1033,25 @@ namespace ed {
 					glGenerateMipmap(GL_TEXTURE_3D);
 					glBindTexture(GL_TEXTURE_3D, 0);
 				} else {
+
+					GLuint internalFormat = isFloat ? GL_RGBA32F : GL_RGBA8; //It used to be GL_RGBA, but since type is always GL_UNSIGNED_BYTE, not SHORT4444 alike, GL_RGBA8 is more precise
+					GLenum format = GL_RGBA;
+					GLenum type = isFloat ? GL_FLOAT : GL_UNSIGNED_BYTE;
+
 					// normal texture
 					glBindTexture(GL_TEXTURE_2D, item->Texture);
-					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+					glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, data);
 					glGenerateMipmap(GL_TEXTURE_2D);
 					glBindTexture(GL_TEXTURE_2D, 0);
 
 					// flipped texture
-					unsigned char* flippedData = (unsigned char*)malloc(width * height * 4);
-					for (int x = 0; x < width; x++) {
-						for (int y = 0; y < height; y++) {
-							flippedData[(y * width + x) * 4 + 0] = data[((height - y - 1) * width + x) * 4 + 0];
-							flippedData[(y * width + x) * 4 + 1] = data[((height - y - 1) * width + x) * 4 + 1];
-							flippedData[(y * width + x) * 4 + 2] = data[((height - y - 1) * width + x) * 4 + 2];
-							flippedData[(y * width + x) * 4 + 3] = data[((height - y - 1) * width + x) * 4 + 3];
-						}
-					}
+
+					int pixelSize = (isFloat ? 4 * 4 : 4);
+
+					unsigned char* flippedData = (unsigned char*)malloc(width * height * pixelSize);
+					memcpy(flippedData, data, width * height * pixelSize);
+					stbi_vertical_flip(flippedData, width, height, pixelSize); //No need to do it on our own, it can handle different pixel size
+
 					glBindTexture(GL_TEXTURE_2D, item->FlippedTexture);
 					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, flippedData);
 					glGenerateMipmap(GL_TEXTURE_2D);

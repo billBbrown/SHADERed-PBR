@@ -113,6 +113,16 @@ namespace ed {
 
 				ImGui::Separator();
 
+				if (oItem->Type == ObjectType::Texture || oItem->Type == ObjectType::Texture3D) {
+					if (ImGui::Selectable("Reload")) {
+						std::string texOutPath = m_data->Parser.GetTexturePath(
+							oItem->Name, m_data->Parser.GetProjectPath(""));
+						m_data->Objects.ReloadTexture(oItem, texOutPath);
+					}
+				}
+
+				ImGui::Separator();
+
 				if (oItem->Image != nullptr || isImg3D) {
 					if (ImGui::BeginMenu(isImg3D ? "Bind UAV/image3D" : "Bind UAV/image2D")) {
 						for (int j = 0; j < passes.size(); j++) {
@@ -161,6 +171,7 @@ namespace ed {
 							}
 						}
 					}
+
 					ImGui::EndMenu();
 				}
 
