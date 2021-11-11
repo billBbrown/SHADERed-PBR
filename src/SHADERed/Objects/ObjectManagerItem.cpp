@@ -14,11 +14,22 @@ ed::ObjectManagerItem::ObjectManagerItem(const std::string& name, ObjectType typ
 	Texture = 0;
 	FlippedTexture = 0;
 	Texture_VFlipped = false;
-	Texture_MinFilter = GL_LINEAR;
-	Texture_MagFilter = GL_NEAREST;
-	Texture_WrapS = GL_REPEAT;
-	Texture_WrapT = GL_REPEAT;
-	Texture_WrapR = GL_REPEAT;
+	
+	if (type == ObjectType::CubeMap) {
+		Texture_MinFilter = GL_LINEAR;
+		Texture_MagFilter = GL_LINEAR;
+		Texture_WrapS = GL_CLAMP_TO_EDGE;
+		Texture_WrapT = GL_CLAMP_TO_EDGE;
+		Texture_WrapR = GL_CLAMP_TO_EDGE;
+	} else {
+		Texture_MinFilter = GL_LINEAR;
+		Texture_MagFilter = GL_NEAREST;
+		Texture_WrapS = GL_REPEAT;
+		Texture_WrapT = GL_REPEAT;
+		Texture_WrapR = GL_REPEAT;
+	}
+	
+
 	CubemapPaths.clear();
 	Sound = nullptr;
 	SoundMuted = false;

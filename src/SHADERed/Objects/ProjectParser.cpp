@@ -640,7 +640,7 @@ namespace ed {
 					textureNode.append_attribute("env_type").set_value((int)item->EnvironmentTypeValue);
 				}
 
-				if ((isTexture && !isKeyboardTexture) || isTexture3D) {
+				if ((isTexture && !isKeyboardTexture) || isTexture3D || isCube) {
 					textureNode.append_attribute("vflip").set_value(item->Texture_VFlipped);
 					textureNode.append_attribute("min_filter").set_value(ed::gl::String::TextureMinFilter(item->Texture_MinFilter));
 					textureNode.append_attribute("mag_filter").set_value(ed::gl::String::TextureMagFilter(item->Texture_MagFilter));
@@ -2858,7 +2858,7 @@ namespace ed {
 				}
 
 				// texture properties
-				if (!isCube) {
+				if (true) {//isCube, Nov 11, 2021, cube should also support filter
 					ObjectManagerItem* itemData = m_objects->Get(name);
 					if (itemData != nullptr) {
 						// vflip

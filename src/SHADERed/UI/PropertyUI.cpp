@@ -45,7 +45,7 @@ namespace ed {
 					ImGui::Text("(%s)", ((pipe::PluginItemData*)m_current->Data)->Type);
 				}
 			} else if (m_currentObj != nullptr) {
-				if (IsTexture() || IsTexture3D())
+				if (IsTexture() || IsTexture3D() || IsCubeMap())
 					ImGui::TextUnformatted(std::filesystem::path(m_currentObj->Name).filename().generic_u8string().c_str());
 				else
 					ImGui::TextUnformatted(m_currentObj->Name.c_str());
@@ -59,6 +59,8 @@ namespace ed {
 					ImGui::Text("Image3D");
 				else if (IsTexture3D())
 					ImGui::Text("Texture3D");
+				else if (IsCubeMap())
+					ImGui::Text("CubeMap");
 				else if (IsPlugin())
 					ImGui::Text(m_currentObj->Plugin->Type);
 				else
@@ -1361,7 +1363,7 @@ namespace ed {
 					}
 				}
 			} 
-			else if (IsTexture()) {
+			else if (IsTexture() || IsCubeMap()) {
 				/* texture path */
 				ImGui::Text("Path:");
 				ImGui::NextColumn();
@@ -1376,18 +1378,21 @@ namespace ed {
 				ImGui::NextColumn();
 				ImGui::Separator();
 
+				bool paramsUpdated = false;
 				/* VFLIP */
-				ImGui::Text("VFlip:");
-				ImGui::NextColumn();
-				ImGui::PushItemWidth(-1);
-				bool flipped = m_currentObj->Texture_VFlipped, paramsUpdated = false;
-				if (ImGui::Checkbox("##prop_tex_vflip", &flipped)) {
-					m_data->Objects.FlipTexture(m_itemName);
-					m_data->Parser.ModifyProject();
+				if (!IsCubeMap()) {
+					ImGui::Text("VFlip:");
+					ImGui::NextColumn();
+					ImGui::PushItemWidth(-1);
+					bool flipped = m_currentObj->Texture_VFlipped;
+					if (ImGui::Checkbox("##prop_tex_vflip", &flipped)) {
+						m_data->Objects.FlipTexture(m_itemName);
+						m_data->Parser.ModifyProject();
+					}
+					ImGui::PopItemWidth();
+					ImGui::NextColumn();
+					ImGui::Separator();
 				}
-				ImGui::PopItemWidth();
-				ImGui::NextColumn();
-				ImGui::Separator();
 
 				/* MIN FILTER */
 				ImGui::Text("MinFilter:");

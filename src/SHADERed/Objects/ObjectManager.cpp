@@ -445,12 +445,12 @@ namespace ed {
 		glGenTextures(1, &item->Texture);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, item->Texture);
 
-		// properties
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		// properties	
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, item->Texture_MinFilter);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, item->Texture_MagFilter);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, item->Texture_WrapS);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, item->Texture_WrapT);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, item->Texture_WrapR);
 
 		auto firstExtension = std::filesystem::path(left).extension().string();
 
@@ -521,7 +521,11 @@ namespace ed {
 			auto newId = item->TextureDetail->id;
 			assert(oldId != newId);
 			assert(item->TextureDetail->Validate());
-			item->Texture = item->TextureDetail->id; //Texture was 
+			item->Texture = item->TextureDetail->id; //Texture was recreated
+
+			// specular map needs linear filter
+			item->Texture_MinFilter = GL_LINEAR_MIPMAP_LINEAR;
+			this->UpdateTextureParameters(item);
 		}
 		
 		assert(item->TextureDetail->width == width);
@@ -1459,7 +1463,12 @@ namespace ed {
 	void ObjectManager::UpdateTextureParameters(const std::string& name)
 	{
 		ObjectManagerItem* item = Get(name);
+		if (item)
+			this->UpdateTextureParameters(item);
+	}
 
+	void ObjectManager::UpdateTextureParameters(ObjectManagerItem * item) 
+	{ 
 		if (item != nullptr) {
 			if (item->Type == ed::ObjectType::Texture) {
 				glBindTexture(GL_TEXTURE_2D, item->Texture);
@@ -1476,7 +1485,21 @@ namespace ed {
 
 				glBindTexture(GL_TEXTURE_2D, 0);
 			}
+			if (item->Type == ed::ObjectType::CubeMap) {
+				glBindTexture(GL_TEXTURE_CUBE_MAP, item->Texture);
+				glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, item->Texture_MinFilter);
+				glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, item->Texture_MagFilter);
+				glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, item->Texture_WrapS);
+				glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, item->Texture_WrapT);
 
+				/*glBindTexture(GL_TEXTURE_2D, item->FlippedTexture);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, item->Texture_MinFilter);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, item->Texture_MagFilter);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, item->Texture_WrapS);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, item->Texture_WrapT);*/
+
+				glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+			}
 			else if (item->Type == ed::ObjectType::Texture3D) {
 				glBindTexture(GL_TEXTURE_3D, item->Texture);
 				glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, item->Texture_MinFilter);
