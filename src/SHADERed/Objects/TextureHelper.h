@@ -101,12 +101,13 @@ namespace ed {
 		//////////////////////////////////////////////////////////////////////////
 
 		EnvironmentTexture Create(const std::string& file);
+		TextureDesc PostProcessCubemap_PrefilteredSpecular(TextureDesc desc);
 
 		struct SavedTexturePathResult {
 			enum {
 				MAX_POSIBLE_TEXTURE = 6, //Happen on cubemap, save 1, become 6, since this engine use 6 face format, it may be a better choice to save it separately instead of saving a single dds or cross-cubemap
 			};
-			GLenum SavedTextureTarget; //GL_TEXTURE_CUBE_MAP, GL_TEXTURE_2D, GL_TEXTURE_3D
+			GLenum SavedTextureTarget = GL_TEXTURE_2D; //GL_TEXTURE_CUBE_MAP, GL_TEXTURE_2D, GL_TEXTURE_3D
 			std::string SavedPath[MAX_POSIBLE_TEXTURE];
 		};
 

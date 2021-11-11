@@ -637,6 +637,7 @@ namespace ed {
 					textureNode.append_attribute("bottom").set_value(GetTexturePath(texmaps[3], oldProjectPath).c_str());
 					textureNode.append_attribute("right").set_value(GetTexturePath(texmaps[4], oldProjectPath).c_str());
 					textureNode.append_attribute("back").set_value(GetTexturePath(texmaps[5], oldProjectPath).c_str());
+					textureNode.append_attribute("env_type").set_value((int)item->EnvironmentTypeValue);
 				}
 
 				if ((isTexture && !isKeyboardTexture) || isTexture3D) {
@@ -2810,11 +2811,18 @@ namespace ed {
 				if (!objectNode.attribute("is_3d").empty())
 					is3D = objectNode.attribute("is_3d").as_bool();
 
+				EnvironmentType envType = EnvironmentType_None;
+				if (!objectNode.attribute("env_type").empty()) {
+					int envTypeRaw = objectNode.attribute("env_type").as_int();
+					if (envTypeRaw >= EnvironmentType_None && envTypeRaw < EnvironmentType_Count)
+						envType = (EnvironmentType)envTypeRaw;
+				}
+				
 				if (isCube || isKeyboardTexture)
 					strcpy(name, objectNode.attribute("name").as_string());
 				else
 					strcpy(name, toGenericPath(objectNode.attribute("path").as_string()).c_str());
-
+				
 				if (isCube) {
 					strcpy(cubeLeft, toGenericPath(objectNode.attribute("left").as_string()).c_str());
 					strcpy(cubeTop, toGenericPath(objectNode.attribute("top").as_string()).c_str());
@@ -2825,7 +2833,7 @@ namespace ed {
 				}
 
 				if (isCube)
-					m_objects->CreateCubemap(name, cubeLeft, cubeTop, cubeFront, cubeBottom, cubeRight, cubeBack);
+					m_objects->CreateCubemap(name, cubeLeft, cubeTop, cubeFront, cubeBottom, cubeRight, cubeBack, envType);
 				else if (isKeyboardTexture)
 					m_objects->CreateKeyboardTexture(name);
 				else if (is3D)

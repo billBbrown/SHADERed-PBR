@@ -421,14 +421,14 @@ namespace ed {
 		return true;
 	}
 	bool ObjectManager::CreateCubemap(const std::string& name,
-		const std::string (&paths)[6])
+		const std::string (&paths)[6], EnvironmentType environmentType)
 	{
 		return CreateCubemap(name, paths[CubeFace_Left], paths[CubeFace_Top], paths[CubeFace_Front], 
-			paths[CubeFace_Bottom], paths[CubeFace_Right], paths[CubeFace_Back]);	
+			paths[CubeFace_Bottom], paths[CubeFace_Right], paths[CubeFace_Back], environmentType);	
 	}
 	bool ObjectManager::CreateCubemap(const std::string& name, 
 		const std::string& left, const std::string& top, const std::string& front, 
-		const std::string& bottom, const std::string& right, const std::string& back)
+		const std::string& bottom, const std::string& right, const std::string& back, EnvironmentType environmentType)
 	{
 		Logger::Get().Log("Creating a cubemap " + name + " ...");
 
@@ -509,11 +509,21 @@ namespace ed {
 
 		item->TextureDetail->id = item->Texture; //Final set the id to make it valid
 		assert(item->TextureDetail->Validate());
+		item->EnvironmentTypeValue = environmentType;
 
 		// clean up
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 		item->TextureSize = glm::ivec2(width, height);
 
+		if (environmentType == EnvironmentType_Specular) {
+			auto oldId = item->TextureDetail->id;
+			*(item->TextureDetail) = TextureHelper::PostProcessCubemap_PrefilteredSpecular(*item->TextureDetail);
+			auto newId = item->TextureDetail->id;
+			assert(oldId != newId);
+			assert(item->TextureDetail->Validate());
+			item->Texture = item->TextureDetail->id; //Texture was 
+		}
+		
 		assert(item->TextureDetail->width == width);
 
 		return true;
@@ -577,13 +587,13 @@ namespace ed {
 			}
 		
 			//Need to wait for all textures created then add object
-			if (!CreateCubemap(filePathNoExt.string() + ".sp.hdr", envTextureResult.SavedPath)) {
+			if (!CreateCubemap(filePathNoExt.string() + ".sp.hdr", envTextureResult.SavedPath, EnvironmentType_Specular)) {
 				Logger::Get().Log("Cannot create environment texture: " + file + " because env cube recreation failed",
 					true);
 				return false;
 			}
 			
-			if (!CreateCubemap(filePathNoExt.string() + ".ir.hdr", irTextureResult.SavedPath)) {
+			if (!CreateCubemap(filePathNoExt.string() + ".ir.hdr", irTextureResult.SavedPath, EnvironmentType_Iradiance)) {
 				Logger::Get().Log("Cannot create environment texture: " + file + " because ir cube recreation failed",
 					true);
 				return false;

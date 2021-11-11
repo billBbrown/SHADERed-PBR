@@ -27,6 +27,7 @@ ed::ObjectManagerItem::ObjectManagerItem(const std::string& name, ObjectType typ
 	Image = nullptr;
 	Image3D = nullptr;
 	Plugin = nullptr;
+	EnvironmentTypeValue = EnvironmentType_None;
 }
 
 ed::ObjectManagerItem::~ObjectManagerItem()

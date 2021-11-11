@@ -30,7 +30,7 @@
 namespace ed {
 	namespace TextureHelper {
 		static constexpr int kEnvMapSize = 1024;
-		static constexpr int kIrradianceMapSize = 32;
+		static constexpr int kIrradianceMapSize = 128;
 		static constexpr int kBRDF_LUT_Size = 256;
 
 		//////////////////////////////////////////////////////////////////////////
@@ -64,8 +64,10 @@ namespace ed {
 			{
 				TextureDesc texture;
 
+				int levelsUsing = (levels > 0) ? levels : Utility::numMipmapLevels(width, height);
+
 				glCreateTextures(target, 1, &texture.id);
-				glTextureStorage2D(texture.id, texture.levels, internalformat, width, height);
+				glTextureStorage2D(texture.id, levelsUsing, internalformat, width, height);
 				glTextureParameteri(texture.id, GL_TEXTURE_MIN_FILTER, texture.levels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 				glTextureParameteri(texture.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 				glTextureParameterf(texture.id, GL_TEXTURE_MAX_ANISOTROPY_EXT, m_capabilities.maxAnisotropy);
@@ -73,7 +75,7 @@ namespace ed {
 				texture.target = target;
 				texture.width = width;
 				texture.height = height;
-				texture.levels = (levels > 0) ? levels : Utility::numMipmapLevels(width, height);
+				texture.levels = levelsUsing;
 				texture.format = format;
 				texture.type = type;
 				texture.internalFormat = internalformat;
@@ -538,6 +540,55 @@ namespace ed {
 			return et;
 		}
 
+		TextureDesc PostProcessCubemap_PrefilteredSpecular(TextureDesc desc)
+		{
+			if (!(desc.internalFormat == GL_RGBA16F || desc.internalFormat == GL_RGBA32F)) {
+				ed::Logger::Get().Log("Error format: " + std::to_string(desc.internalFormat), true);
+				return desc;
+			}
+
+			// Compute pre-filtered specular environment map.
+			GLuint spmapProgram = desc.internalFormat == GL_RGBA16F ? 
+				Renderer::linkProgram({ Renderer::compileShader("data/shaders/glsl/spmap_cs.glsl", GL_COMPUTE_SHADER) }) :
+				  Renderer::linkProgram({ Renderer::compileShader("data/shaders/glsl/spmap_cs_32.glsl", GL_COMPUTE_SHADER) });
+		
+
+			TextureDesc specMap = Renderer::createTextureInternal(
+				GL_TEXTURE_CUBE_MAP, kEnvMapSize, kEnvMapSize, desc.format, desc.type, desc.internalFormat);
+
+			GLenum oglError;
+			while ((oglError = glGetError()) != GL_NO_ERROR)
+				ed::Logger::Get().Log("GL error: " + std::to_string(oglError), true);
+
+			while ((oglError = glGetError()) != GL_NO_ERROR)
+				ed::Logger::Get().Log("GL error: " + std::to_string(oglError), true);
+
+			// Copy 0th mipmap level into destination environment map.
+			glCopyImageSubData(desc.id, GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
+				specMap.id, GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
+				specMap.width, specMap.height, 6);
+
+			glUseProgram(spmapProgram);
+			glBindTextureUnit(0, desc.id);
+
+			// Pre-filter rest of the mip chain.
+			const float deltaRoughness = 1.0f / glm::max(float(specMap.levels - 1), 1.0f);
+			for (int level = 1, size = kEnvMapSize / 2; level <= specMap.levels; ++level, size /= 2) {
+				const GLuint numGroups = glm::max(1, size / 32);
+				glBindImageTexture(0, specMap.id, level, GL_TRUE, 0, GL_WRITE_ONLY, desc.internalFormat);
+				glProgramUniform1f(spmapProgram, 0, level * deltaRoughness);
+				glDispatchCompute(numGroups, numGroups, 6); //x, y, z groups
+			}
+			glDeleteProgram(spmapProgram);
+			
+			while ((oglError = glGetError()) != GL_NO_ERROR)
+				ed::Logger::Get().Log("GL error: " + std::to_string(oglError), true);
+			glFinish();
+
+			desc.Destroy();
+
+			return specMap;
+		}
 	}
 
 	void stbi_vertical_flip(void* image, int w, int h, int bytes_per_pixel) //copy from stbi__vertical_flip
