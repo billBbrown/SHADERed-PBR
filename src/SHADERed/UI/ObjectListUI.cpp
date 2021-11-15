@@ -2,6 +2,7 @@
 #include <SHADERed/Engine/GeometryFactory.h>
 #include <SHADERed/Objects/Logger.h>
 #include <SHADERed/Objects/Settings.h>
+#include <SHADERed/Objects/TextureHelper.h>
 #include <SHADERed/UI/ObjectListUI.h>
 #include <SHADERed/UI/ObjectPreviewUI.h>
 #include <SHADERed/UI/PropertyUI.h>
@@ -83,8 +84,9 @@ namespace ed {
 					m_cubePrev.Draw(tex);
 					ImGui::Image((void*)(intptr_t)m_cubePrev.GetTexture(), ImVec2(IMAGE_CONTEXT_WIDTH, ((float)imgWH) * IMAGE_CONTEXT_WIDTH), ImVec2(0, 1), ImVec2(1, 0));
 				} else if (!isBuf && !isImg3D && !isPluginOwner) {
-					m_texPrev.Draw(tex); //Use texture preview to adapt float texture to regular UI
-					ImGui::Image((void*)(intptr_t)m_texPrev.GetTexture(), ImVec2(IMAGE_CONTEXT_WIDTH, ((float)imgWH) * IMAGE_CONTEXT_WIDTH), ImVec2(0, 1), ImVec2(1, 0));
+					//Use texture preview to adapt float texture to regular UI
+					ImGui::Image((void*)(intptr_t)m_texPrev.DrawToGUITexture(tex, oItem->TextureDetail->type), 
+						ImVec2(IMAGE_CONTEXT_WIDTH, ((float)imgWH) * IMAGE_CONTEXT_WIDTH), ImVec2(0, 1), ImVec2(1, 0));
 				} else if (hasPluginPreview)
 					pobj->Owner->Object_ShowPreview(pobj->Type, pobj->Data, pobj->ID);
 
@@ -106,8 +108,9 @@ namespace ed {
 					m_tex3DPrev.Draw(tex, IMAGE_CONTEXT_WIDTH, ((float)imgWH) * IMAGE_CONTEXT_WIDTH);
 					ImGui::Image((void*)(intptr_t)m_tex3DPrev.GetTexture(), ImVec2(IMAGE_CONTEXT_WIDTH, ((float)imgWH) * IMAGE_CONTEXT_WIDTH));
 				} else if (!isBuf && !isImg3D && !isPluginOwner) {
-					m_texPrev.Draw(tex); //Use texture preview to adapt float texture to regular UI
-					ImGui::Image((void*)(intptr_t)m_texPrev.GetTexture(), ImVec2(IMAGE_CONTEXT_WIDTH, ((float)imgWH) * IMAGE_CONTEXT_WIDTH), ImVec2(0, 1), ImVec2(1, 0));
+					//Use texture preview to adapt float texture to regular UI
+					ImGui::Image((void*)(intptr_t)m_texPrev.DrawToGUITexture(tex, oItem->TextureDetail->type), 
+						ImVec2(IMAGE_CONTEXT_WIDTH, ((float)imgWH) * IMAGE_CONTEXT_WIDTH), ImVec2(0, 1), ImVec2(1, 0));
 				} else if (hasPluginPreview)
 					pobj->Owner->Object_ShowPreview(pobj->Type, pobj->Data, pobj->ID);
 

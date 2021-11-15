@@ -14,6 +14,7 @@ namespace ed {
 		void Init(int w, int h, GLuint internalFormat = GL_RGBA, GLenum format = GL_RGBA, GLenum type = GL_UNSIGNED_BYTE);
 		void Draw(GLuint tex);
 		inline GLuint GetTexture() { return m_backTex; }
+		GLuint DrawToGUITexture(GLuint tex, GLenum pixelType);
 	private:
 		float m_w, m_h;
 

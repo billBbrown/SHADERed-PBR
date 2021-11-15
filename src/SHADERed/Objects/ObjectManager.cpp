@@ -982,6 +982,15 @@ namespace ed {
 
 	bool ObjectManager::ReloadTexture(ObjectManagerItem* item, const std::string& newPath, bool forcely/* = false*/)
 	{
+		if (item->Type != ObjectType::Texture) {
+			Logger::Get().Log("Cant reload non-texture: " + item->Name);
+			return false;
+		}
+
+		Logger::Get().Log("Reloading a texture " + newPath + " ...");
+
+		GLuint oldID = item->Texture;
+
 		stbi_set_flip_vertically_on_load(1);
 
 		for (int i = 0; i < m_items.size(); i++) {
@@ -1003,7 +1012,6 @@ namespace ed {
 					depth = ddsImage->header.depth;
 				} else {
 					int nrChannels = 0;
-					stbi_set_flip_vertically_on_load(1);
 					if (stbi_is_hdr(path.c_str())) {
 						data = (unsigned char*)stbi_loadf(path.c_str(), &width, &height, &nrChannels, STBI_rgb_alpha);
 						isFloat = true;
@@ -1053,7 +1061,7 @@ namespace ed {
 					stbi_vertical_flip(flippedData, width, height, pixelSize); //No need to do it on our own, it can handle different pixel size
 
 					glBindTexture(GL_TEXTURE_2D, item->FlippedTexture);
-					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, flippedData);
+					glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, flippedData);
 					glGenerateMipmap(GL_TEXTURE_2D);
 					glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -1067,6 +1075,23 @@ namespace ed {
 					stbi_image_free(data);
 				else
 					dds_image_free(ddsImage);
+
+				if (item->FlippedTexture) {
+					std::swap(item->Texture, item->FlippedTexture);
+				}
+
+				//Rebind texture
+				int newID = item->Texture;
+				for (auto& pipeline_bindvector : m_binds)
+				{
+					std::vector<GLuint>& bindVector = pipeline_bindvector.second;
+					for (size_t i = 0; i < bindVector.size(); ++i)
+					{
+						if (bindVector[i] == oldID) {
+							bindVector[i] = newID;
+						}
+					}
+				}
 
 				return true;
 			}

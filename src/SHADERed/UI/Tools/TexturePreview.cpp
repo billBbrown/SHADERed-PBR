@@ -2,6 +2,7 @@
 #include <SHADERed/Engine/GeometryFactory.h>
 #include <SHADERed/Objects/Logger.h>
 #include <SHADERed/UI/Tools/TexturePreview.h>
+#include <SHADERed/Objects/TextureHelper.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -94,4 +95,14 @@ namespace ed {
 		glBindVertexArray(m_fsVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 	}
+
+	GLuint TexturePreview::DrawToGUITexture(GLuint tex, GLenum pixelType)
+	{
+		if (TextureHelper::TextureDesc::IsFloatPixel(pixelType)) {
+			this->Draw(tex);
+			return this->GetTexture();
+		}
+		return tex; //Normal texture don't need extra drawing, and that can preserve mipmap
+	}
+
 }

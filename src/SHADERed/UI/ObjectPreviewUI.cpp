@@ -1,6 +1,7 @@
 #include <SHADERed/Objects/Names.h>
 #include <SHADERed/Objects/SystemVariableManager.h>
 #include <SHADERed/Objects/Logger.h>
+#include <SHADERed/Objects/TextureHelper.h>
 #include <SHADERed/UI/Tools/DebuggerOutline.h>
 #include <SHADERed/UI/ObjectPreviewUI.h>
 #include <SHADERed/UI/UIHelper.h>
@@ -380,8 +381,8 @@ namespace ed {
 						const glm::vec2& zPos = m_zoom[i].GetZoomPosition();
 						const glm::vec2& zSize = m_zoom[i].GetZoomSize();
 						
-						m_texPrev.Draw(item->Texture);
-						ImGui::Image((void*)(intptr_t)m_texPrev.GetTexture(), aSize, ImVec2(zPos.x, zPos.y + zSize.y), ImVec2(zPos.x + zSize.x, zPos.y));
+						ImGui::Image((void*)(intptr_t)m_texPrev.DrawToGUITexture(item->Texture, item->TextureDetail->type),
+							aSize, ImVec2(zPos.x, zPos.y + zSize.y), ImVec2(zPos.x + zSize.x, zPos.y));
 
 						if (ImGui::IsItemHovered()) {
 							m_curHoveredItem = i;
