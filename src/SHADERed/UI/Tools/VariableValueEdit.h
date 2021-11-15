@@ -11,7 +11,7 @@ namespace ed {
 		inline void Close() { m_var = nullptr; }
 		inline ed::ShaderVariable* GetVariable() { return m_var; }
 
-		bool Update();
+		bool Update(bool* doClose=nullptr);
 
 	private:
 		bool m_drawRegular();

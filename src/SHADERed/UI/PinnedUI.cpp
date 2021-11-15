@@ -15,14 +15,21 @@ namespace ed {
 			ImGui::PushID(i);
 
 			m_editor.Open(var);
-			if (m_editor.Update())
+			bool doClose = false;
+			if (m_editor.Update(&doClose))
 				m_data->Parser.ModifyProject();
 
-			ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - Settings::Instance().CalculateSize(25));
+			/*ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - Settings::Instance().CalculateSize(25));
 			if (ImGui::Button("CLOSE", ImVec2(Settings::Instance().CalculateSize(50), 0))) {
 				Remove(var->Name);
 				m_data->Parser.ModifyProject();
+			}*/
+
+			if (doClose) { //The upper button take too much space, changed to a small X close button
+				Remove(var->Name);
+				m_data->Parser.ModifyProject();
 			}
+
 
 			ImGui::NewLine();
 			ImGui::Separator();

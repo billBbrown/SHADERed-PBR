@@ -14,7 +14,7 @@ namespace ed {
 		m_data = data;
 		Close();
 	}
-	bool VariableValueEditUI::Update()
+	bool VariableValueEditUI::Update(bool* doClose)
 	{
 		if (m_var == nullptr)
 			return false;
@@ -30,7 +30,7 @@ namespace ed {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 
 		ImGui::SameLine();
-		ImGui::SetCursorPosX(ImGui::GetWindowWidth() - (71 + ImGui::GetStyle().WindowPadding.x * 2));
+		ImGui::SetCursorPosX(ImGui::GetWindowWidth() - (96 + ImGui::GetStyle().WindowPadding.x * 2));
 		if (ImGui::Button(UI_ICON_EDIT, ImVec2(25, 0))) {
 			m_var->Function = FunctionShaderVariable::None;
 			modified = true;
@@ -52,6 +52,14 @@ namespace ed {
 					FunctionVariableManager::AllocateArgumentSpace(m_var, (FunctionShaderVariable)i);
 					break;
 				}
+			}
+		}
+		ImGui::SameLine();
+		if (doClose != nullptr) {
+			if (ImGui::Button(UI_ICON_CLOSE, ImVec2(25, 0))) {
+
+				*doClose = true;
+				modified = true;
 			}
 		}
 
