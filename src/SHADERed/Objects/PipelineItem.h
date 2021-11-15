@@ -34,10 +34,13 @@ namespace ed {
 
 		PipelineItem()
 				: Data(0)
+				, Active(true)
 		{
 			memset(Name, 0, PIPELINE_ITEM_NAME_LENGTH * sizeof(char));
+			
 		}
 		PipelineItem(const char* name, ItemType type, void* data)
+				:Active(true)
 		{
 			strcpy(Name, name);
 			Type = type;
@@ -45,6 +48,7 @@ namespace ed {
 		}
 
 		char Name[PIPELINE_ITEM_NAME_LENGTH];
+		bool Active;
 		ItemType Type;
 		void* Data;
 	};

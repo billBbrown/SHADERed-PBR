@@ -314,6 +314,10 @@ namespace ed {
 
 					systemVM.SetPicked(false);
 
+					//Sub item inactive
+					if (!item->Active)
+						continue;
+
 					// update the value for this element and check if we picked it
 					if (item->Type == PipelineItem::ItemType::Geometry || item->Type == PipelineItem::ItemType::Model || item->Type == PipelineItem::ItemType::VertexBuffer || item->Type == PipelineItem::ItemType::PluginItem) {
 						if (m_pickAwaiting) m_pickItem(item, m_wasMultiPick);

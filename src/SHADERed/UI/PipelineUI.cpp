@@ -62,8 +62,23 @@ namespace ed {
 					for (int j = 0; j < data->Items.size(); j++) {
 						m_renderItemUpDown(nullptr, data->Items, j);
 
-						if (!data->Active)
+						if (!data->Active) {
 							ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+						} else {
+							ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+
+							const auto& itemName = data->Items[j]->Name;
+							bool subItemActive = data->Items[j]->Active;
+
+							if (ImGui::Button(std::string(std::string(subItemActive ? UI_ICON_EYE : UI_ICON_EYE_BLOCKED) + "##hide" + itemName).c_str(), BUTTON_ICON_SIZE))
+							{
+								data->Items[j]->Active = !subItemActive;
+								//m_data->Parser.ModifyProject();//Saving not implemented yet
+							}
+							ImGui::PopStyleColor();
+							ImGui::SameLine();
+						}
+
 						m_addItem(data->Items[j]);
 						if (!data->Active)
 							ImGui::PopStyleVar();
