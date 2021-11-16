@@ -281,6 +281,8 @@ namespace ed {
 			}
 		};
 
+		void ApplyRenderStateToGL(const RenderState& state);
+
 		struct Model {
 			bool OnlyGroup; // render only a group
 			char GroupName[MODEL_GROUP_NAME_LENGTH];

@@ -65,6 +65,9 @@ void main()
 )";
 
 namespace ed {
+	
+	static pipe::RenderState defaultState;
+
 	CubemapPreview::~CubemapPreview()
 	{
 		glDeleteBuffers(1, &m_fsVBO);
@@ -95,6 +98,7 @@ namespace ed {
 	}
 	void CubemapPreview::Draw(GLuint tex)
 	{
+		pipe::ApplyRenderStateToGL(defaultState);
 		// bind fbo and buffers
 		glBindFramebuffer(GL_FRAMEBUFFER, m_cubeFBO);
 		static const GLuint fboBuffers[] = { GL_COLOR_ATTACHMENT0 };

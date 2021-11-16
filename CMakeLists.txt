@@ -50,6 +50,7 @@ set(SOURCES
 	src/SHADERed/Objects/WebAPI.cpp
 	src/SHADERed/Objects/TextureHelper.cpp
 	src/SHADERed/Objects/image.cpp
+	src/SHADERed/Objects/PipelineItem.cpp
 
 # UI Tools
 	src/SHADERed/UI/Tools/CubemapPreview.cpp

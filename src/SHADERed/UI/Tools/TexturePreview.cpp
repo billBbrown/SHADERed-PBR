@@ -41,6 +41,9 @@ void main()
 )";
 
 namespace ed {
+
+	static pipe::RenderState defaultState;
+
 	TexturePreview::~TexturePreview()
 	{
 		glDeleteBuffers(1, &m_fsVBO);
@@ -75,6 +78,8 @@ namespace ed {
 	}
 	void TexturePreview::Draw(GLuint tex)
 	{
+		pipe::ApplyRenderStateToGL(defaultState);
+
 		// bind fbo and buffers
 		glBindFramebuffer(GL_FRAMEBUFFER, m_backFBO);
 		static const GLuint fboBuffers[] = { GL_COLOR_ATTACHMENT0 };

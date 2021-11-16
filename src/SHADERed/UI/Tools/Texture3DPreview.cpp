@@ -37,6 +37,9 @@ void main()
 )";
 
 namespace ed {
+
+	static pipe::RenderState defaultState;
+
 	Texture3DPreview::~Texture3DPreview()
 	{
 		glDeleteBuffers(1, &m_vbo);
@@ -60,6 +63,7 @@ namespace ed {
 	}
 	void Texture3DPreview::Draw(GLuint tex, int w, int h, float uvZ)
 	{
+		pipe::ApplyRenderStateToGL(defaultState);
 		if (m_w != w || m_h != h) {
 			glDeleteBuffers(1, &m_vbo);
 			glDeleteVertexArrays(1, &m_vao);
