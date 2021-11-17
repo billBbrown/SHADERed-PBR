@@ -119,4 +119,26 @@ namespace ed {
 			m_data->Parser.ModifyProject();
 	}
 
+
+	void PinnedUI::CopyPinnedVariableTargetToThis(std::vector<ed::ShaderVariable*>& els)
+	{
+		bool changed = false;
+		for (size_t i = 0; i < m_pinnedVars.size(); ++i) {
+			ed::ShaderVariable* var = m_pinnedVars[i];
+			for (ed::ShaderVariable* outerVar : els) {
+				if (var == outerVar) //No need to change
+					continue;
+
+				if (var->GetType() == outerVar->GetType() && strcmp(var->Name, outerVar->Name) == 0 && 
+					var->Function == FunctionShaderVariable::None) {
+					memcpy(outerVar->Data, m_pinnedVars[i]->Data, ed::ShaderVariable::GetSize(outerVar->GetType()));
+					changed = true;
+				}
+			}
+		}
+
+		if (changed)
+			m_data->Parser.ModifyProject();
+	}
+
 }

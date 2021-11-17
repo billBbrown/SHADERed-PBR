@@ -565,6 +565,14 @@ namespace ed {
 					}
 				}
 
+				if (items[index]->Type == PipelineItem::ItemType::ShaderPass && ImGui::MenuItem("Copy Pinned Variables Target To This")) {
+					PipelineItem* pipelineItem = items[index];
+					PinnedUI* pinState = ((PinnedUI*)m_ui->Get(ViewID::Pinned));
+					if (pinState != nullptr && pipelineItem != nullptr && pipelineItem->Data != nullptr) {
+						pinState->CopyPinnedVariableTargetToThis(pipe::GetShaderVariables(pipelineItem));
+					}
+				}
+
 				if (items[index]->Type == PipelineItem::ItemType::ShaderPass && ImGui::MenuItem("Input layout")) {
 					m_isInpLayoutManagerOpened = true;
 					m_modalItem = items[index];

@@ -22,6 +22,7 @@ namespace ed {
 		bool Contains(const char* name);
 
 		void SwitchPinnedVariableTargetToThis(std::vector<ed::ShaderVariable*>& els);
+		void CopyPinnedVariableTargetToThis(std::vector<ed::ShaderVariable*>& els);
 	private:
 		std::vector<ed::ShaderVariable*> m_pinnedVars;
 		VariableValueEditUI m_editor;
