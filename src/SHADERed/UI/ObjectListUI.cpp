@@ -163,10 +163,28 @@ namespace ed {
 						}
 					} else {
 						for (int j = 0; j < passes.size(); j++) {
+
+							const std::vector<std::string>* samplerList;
+							PipelineItem* pitem = passes[j];
+							if (pitem != nullptr && pitem->Type == PipelineItem::ItemType::ShaderPass) {
+								pipe::ShaderPass* pass = (pipe::ShaderPass*)pitem->Data;
+								samplerList = &(pass->Variables.GetSamplerList());
+							}
+
 							int boundID = m_data->Objects.IsBound(oItem, passes[j]);
 							size_t boundItemCount = m_data->Objects.GetBindList(passes[j]).size();
 							bool isBound = boundID != -1;
-							if (ImGui::MenuItem(passes[j]->Name, ("(" + std::to_string(boundID == -1 ? boundItemCount : boundID) + ")").c_str(), isBound)) {
+							std::string shotCut = "(" + std::to_string(boundID == -1 ? boundItemCount : boundID) + ")";
+							//Add sampler real name
+							if (samplerList != nullptr) {
+								if (boundID >= 0 && boundID < samplerList->size()) {
+									shotCut = shotCut + (*samplerList)[boundID];
+								} else if (boundID == -1 && boundItemCount < samplerList->size()) {
+									shotCut = shotCut + (*samplerList)[boundItemCount];
+								}
+							}
+
+							if (ImGui::MenuItem(passes[j]->Name, shotCut.c_str(), isBound)) {
 								if (!isBound)
 									m_data->Objects.Bind(oItem, passes[j]);
 								else
