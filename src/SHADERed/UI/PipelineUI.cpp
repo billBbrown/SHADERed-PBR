@@ -557,6 +557,18 @@ namespace ed {
 					m_modalItem = items[index];
 				}
 
+				if (items[index]->Type == PipelineItem::ItemType::ShaderPass && ImGui::MenuItem("Switch Pinned Variables Target To This")) {
+					PipelineItem* pipelineItem = items[index];
+					PinnedUI* pinState = ((PinnedUI*)m_ui->Get(ViewID::Pinned));
+					if (pinState != nullptr && pipelineItem != nullptr && pipelineItem->Data != nullptr) {
+						void* itemData = pipelineItem->Data;
+						bool isCompute = pipelineItem->Type == PipelineItem::ItemType::ComputePass;
+						bool isAudio = pipelineItem->Type == PipelineItem::ItemType::AudioPass;
+						std::vector<ed::ShaderVariable*>& els = isCompute ? ((pipe::ComputePass*)itemData)->Variables.GetVariables() : (isAudio ? ((pipe::AudioPass*)itemData)->Variables.GetVariables() : ((pipe::ShaderPass*)itemData)->Variables.GetVariables());
+						pinState->SwitchPinnedVariableTargetToThis(els);
+					}
+				}
+
 				if (items[index]->Type == PipelineItem::ItemType::ShaderPass && ImGui::MenuItem("Input layout")) {
 					m_isInpLayoutManagerOpened = true;
 					m_modalItem = items[index];

@@ -73,4 +73,27 @@ namespace ed {
 				return true;
 		return false;
 	}
+
+	void PinnedUI::SwitchPinnedVariableTargetToThis(std::vector<ed::ShaderVariable*>& els)
+	{
+		bool changed = false;
+		for (size_t i = 0; i < m_pinnedVars.size(); ++i)
+		{
+			ed::ShaderVariable* var = m_pinnedVars[i];
+			for (ed::ShaderVariable* outerVar : els)
+			{
+				if (var == outerVar) //No need to change
+					continue;
+
+				if (strcmp(var->Name, outerVar->Name) == 0 && var->GetType() == outerVar->GetType()) {
+					m_pinnedVars[i] = outerVar;
+					changed = true;
+				}
+			}
+		}
+
+		if (changed)
+			m_data->Parser.ModifyProject();
+	}
+
 }
