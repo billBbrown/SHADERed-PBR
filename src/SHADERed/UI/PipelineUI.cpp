@@ -561,11 +561,7 @@ namespace ed {
 					PipelineItem* pipelineItem = items[index];
 					PinnedUI* pinState = ((PinnedUI*)m_ui->Get(ViewID::Pinned));
 					if (pinState != nullptr && pipelineItem != nullptr && pipelineItem->Data != nullptr) {
-						void* itemData = pipelineItem->Data;
-						bool isCompute = pipelineItem->Type == PipelineItem::ItemType::ComputePass;
-						bool isAudio = pipelineItem->Type == PipelineItem::ItemType::AudioPass;
-						std::vector<ed::ShaderVariable*>& els = isCompute ? ((pipe::ComputePass*)itemData)->Variables.GetVariables() : (isAudio ? ((pipe::AudioPass*)itemData)->Variables.GetVariables() : ((pipe::ShaderPass*)itemData)->Variables.GetVariables());
-						pinState->SwitchPinnedVariableTargetToThis(els);
+						pinState->SwitchPinnedVariableTargetToThis(pipe::GetShaderVariables(pipelineItem));
 					}
 				}
 
@@ -835,7 +831,30 @@ namespace ed {
 		ShaderLanguage vsLang = ShaderCompiler::GetShaderLanguageFromExtension(((pipe::ShaderPass*)itemData)->VSPath);
 		bool isGLSL = (vsLang == ShaderLanguage::GLSL) || (vsLang == ShaderLanguage::VulkanGLSL);
 
+		std::vector<ed::ShaderVariable*>& els = pipe::GetShaderVariables(m_modalItem);
+
 		ImGui::TextWrapped("Add or remove variables bound to this shader pass.");
+
+		ImGui::NewLine();
+		if(ImGui::Button("Sort by name [System First]")){
+			m_data->Parser.ModifyProject();
+			std::sort(els.begin(), els.end(), [](const ed::ShaderVariable* a, const ed::ShaderVariable* b) -> bool {
+				if (a->System == SystemShaderVariable::None) {
+					if (b->System == SystemShaderVariable::None)
+						return strcmp(a->Name, b->Name) < 0;
+					else
+						return false;
+				} else {
+					if (b->System == SystemShaderVariable::None)
+						return true;
+					else //Both system , compare name
+						return strcmp(a->Name, b->Name) < 0;
+				}
+				return false;
+			});
+		}
+
+		ImGui::NewLine();
 
 		ImGui::BeginChild("##pui_variable_table", ImVec2(0, Settings::Instance().CalculateSize(-25)));
 		ImGui::Columns(5);
@@ -864,7 +883,6 @@ namespace ed {
 		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0, 0, 0, 0));
 
 		int id = 0;
-		std::vector<ed::ShaderVariable*>& els = isCompute ? ((pipe::ComputePass*)itemData)->Variables.GetVariables() : (isAudio ? ((pipe::AudioPass*)itemData)->Variables.GetVariables() : ((pipe::ShaderPass*)itemData)->Variables.GetVariables());
 
 		/* EXISTING VARIABLES */
 		for (auto& el : els) {

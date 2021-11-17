@@ -298,5 +298,7 @@ namespace ed {
 
 			int TheModelImportFlags = 0;
 		};
+
+		std::vector<ShaderVariable*>& GetShaderVariables(PipelineItem* pipelineItem);
 	}
 }

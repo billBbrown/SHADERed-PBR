@@ -54,5 +54,20 @@ namespace ed {
 			} else
 				glDisable(GL_STENCIL_TEST);
 		}
+
+		std::vector<ShaderVariable*>& GetShaderVariables(PipelineItem* pipelineItem)
+		{
+			if (pipelineItem != nullptr && pipelineItem->Data != nullptr) {
+				bool isCompute = pipelineItem->Type == PipelineItem::ItemType::ComputePass;
+				bool isAudio = pipelineItem->Type == PipelineItem::ItemType::AudioPass;
+				void* itemData = pipelineItem->Data;
+				return isCompute ? ((pipe::ComputePass*)itemData)->Variables.GetVariables() :
+									 (isAudio ? ((pipe::AudioPass*)itemData)->Variables.GetVariables() :
+												((pipe::ShaderPass*)itemData)->Variables.GetVariables());
+			}
+			static std::vector<ShaderVariable*> emptyVariables;
+			return emptyVariables;
+		}
+
 	}
 }

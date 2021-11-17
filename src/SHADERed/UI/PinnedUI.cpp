@@ -10,6 +10,25 @@ namespace ed {
 	}
 	void PinnedUI::Update(float delta)
 	{
+		if (ImGui::Button("Sort by name")) {
+			m_data->Parser.ModifyProject();
+			std::sort(m_pinnedVars.begin(), m_pinnedVars.end(), [](const ed::ShaderVariable* a, const ed::ShaderVariable* b) -> bool {
+				if (a->System == SystemShaderVariable::None) {
+					if (b->System == SystemShaderVariable::None)
+						return strcmp(a->Name, b->Name) < 0;
+					else
+						return false;
+				} else {
+					if (b->System == SystemShaderVariable::None)
+						return true;
+					else //Both system , compare name
+						return strcmp(a->Name, b->Name) < 0;
+				}
+				return false;
+			});
+		}
+		ImGui::NewLine();
+
 		for (int i = 0; i < m_pinnedVars.size(); i++) { 
 			ShaderVariable* var = m_pinnedVars[i];
 			ImGui::PushID(i);
