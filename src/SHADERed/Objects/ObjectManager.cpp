@@ -134,11 +134,16 @@ namespace ed {
 		Clear();
 	}
 
-	void loadCubemapFace(GLuint face, const std::string& path, int& w, int& h, TextureHelper::TextureDesc* outputDetail)
+	bool loadCubemapFace(GLuint face, const std::string& path, int& w, int& h, TextureHelper::TextureDesc* outputDetail)
 	{
 		stbi_set_flip_vertically_on_load(0);
 
-		bool isDDS = (std::filesystem::path(path).extension().u8string() == ".dds");
+		std::filesystem::path pathObject(path);
+		if (!std::filesystem::exists(pathObject)) {
+			Logger::Get().Log("Error when loadCubemapFace, file not exist: " + path);
+			return false;
+		}
+		bool isDDS = (pathObject.extension().u8string() == ".dds");
 
 		unsigned char* data = nullptr;
 		dds_image_t ddsImage = nullptr;
@@ -186,6 +191,8 @@ namespace ed {
 			stbi_image_free(data);
 		else
 			dds_image_free(ddsImage);
+
+		return true;
 	}
 
 	void ObjectManager::Clear()
@@ -268,6 +275,12 @@ namespace ed {
 
 		bool isDDS = (std::filesystem::path(file).extension().u8string() == ".dds");
 		std::string path = m_parser->GetProjectPath(file);
+
+		std::filesystem::path pathObject(path);
+		if (!std::filesystem::exists(pathObject)) {
+			Logger::Get().Log("Error when CreateTexture, file not exist: " + path);
+			return false;
+		}
 
 		int width = 0, height = 0;
 		unsigned char* data = nullptr;
@@ -371,6 +384,12 @@ namespace ed {
 		}
 
 		std::string path = m_parser->GetProjectPath(file);
+		std::filesystem::path pathObject(path);
+		if (!std::filesystem::exists(pathObject)) {
+			Logger::Get().Log("Error when CreateTexture3D, file not exist: " + path);
+			return false;
+		}
+
 		dds_image_t ddsImage = dds_load_from_file(path.c_str());
 
 		if (ddsImage == nullptr) {
@@ -431,106 +450,119 @@ namespace ed {
 		const std::string& bottom, const std::string& right, const std::string& back, EnvironmentType environmentType)
 	{
 		Logger::Get().Log("Creating a cubemap " + name + " ...");
+		ObjectManagerItem* item = nullptr;
+		{
+			if (Exists(name)) {
+				Logger::Get().Log("Cannot create a cubemap " + name + " because cubemap with such name already exists in the project", true);
+				goto Exit0;
+			}
 
-		if (Exists(name)) {
-			Logger::Get().Log("Cannot create a cubemap " + name + " because cubemap with such name already exists in the project", true);
-			return false;
-		}
+			m_parser->ModifyProject();
 
-		m_parser->ModifyProject();
+			item = new ObjectManagerItem(name, ObjectType::CubeMap);
 
-		ObjectManagerItem* item = new ObjectManagerItem(name, ObjectType::CubeMap);
-		m_items.push_back(item);
+			glGenTextures(1, &item->Texture);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, item->Texture);
 
-		glGenTextures(1, &item->Texture);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, item->Texture);
+			// properties
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, item->Texture_MinFilter);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, item->Texture_MagFilter);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, item->Texture_WrapS);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, item->Texture_WrapT);
+			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, item->Texture_WrapR);
 
-		// properties	
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, item->Texture_MinFilter);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, item->Texture_MagFilter);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, item->Texture_WrapS);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, item->Texture_WrapT);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, item->Texture_WrapR);
+			auto firstExtension = std::filesystem::path(left).extension().string();
 
-		auto firstExtension = std::filesystem::path(left).extension().string();
+			bool isFloat = false;
+			if (stbi_is_hdr(m_parser->GetProjectPath(left).c_str()))
+				isFloat = true;
 
-		bool isFloat = false;
-		if (stbi_is_hdr(m_parser->GetProjectPath(left).c_str()))
-			isFloat = true;	
+			int width = 0, height = 0;
+			int width2 = 0, height2 = 0;
 
-		int width = 0, height = 0;
-		int width2 = 0, height2 = 0;
+			item->TextureDetail.reset(new TextureHelper::TextureDesc());
+			// left face
+			if (!loadCubemapFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, m_parser->GetProjectPath(left), width, height, item->TextureDetail.get()))
+				goto Exit0;
+			item->CubemapPaths.push_back(left);
 
-		item->TextureDetail.reset(new TextureHelper::TextureDesc());
-		// left face
-		loadCubemapFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, m_parser->GetProjectPath(left), width, height, item->TextureDetail.get());
-		item->CubemapPaths.push_back(left);
+			// top
+			if (firstExtension != std::filesystem::path(top).extension().string()) {
+				Logger::Get().Log("Cannot create a cubemap because: " + top + ", extension is not identical to the left one", true);
+				goto Exit0;
+			}
+			if (!loadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, m_parser->GetProjectPath(top), width2, height2, nullptr))
+				goto Exit0;
+			item->CubemapPaths.push_back(top);
+			//Should it check width2 == width ??
 
-		// top
-		if (firstExtension != std::filesystem::path(top).extension().string()) {
-			Logger::Get().Log("Cannot create a cubemap because: " + top + ", extension is not identical to the left one", true);
-			return false;
-		}
-		loadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, m_parser->GetProjectPath(top), width2, height2, nullptr);
-		item->CubemapPaths.push_back(top);
-		//Should it check width2 == width ??
+			// front
+			if (firstExtension != std::filesystem::path(front).extension().string()) {
+				Logger::Get().Log("Cannot create a cubemap because: " + front + ", extension is not identical to the left one", true);
+				goto Exit0;
+			}
+			if (!loadCubemapFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, m_parser->GetProjectPath(front), width2, height2, nullptr))
+				goto Exit0;
+			item->CubemapPaths.push_back(front);
 
-		// front
-		if (firstExtension != std::filesystem::path(front).extension().string()) {
-			Logger::Get().Log("Cannot create a cubemap because: " + front + ", extension is not identical to the left one", true);
-			return false;
-		}
-		loadCubemapFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, m_parser->GetProjectPath(front), width2, height2, nullptr);
-		item->CubemapPaths.push_back(front);
+			// bottom
+			if (firstExtension != std::filesystem::path(bottom).extension().string()) {
+				Logger::Get().Log("Cannot create a cubemap because: " + bottom + ", extension is not identical to the left one", true);
+				goto Exit0;
+			}
+			if (!loadCubemapFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, m_parser->GetProjectPath(bottom), width2, height2, nullptr))
+				goto Exit0;
+			item->CubemapPaths.push_back(bottom);
 
-		// bottom
-		if (firstExtension != std::filesystem::path(bottom).extension().string()) {
-			Logger::Get().Log("Cannot create a cubemap because: " + bottom + ", extension is not identical to the left one", true);
-			return false;
-		}
-		loadCubemapFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, m_parser->GetProjectPath(bottom), width2, height2, nullptr);
-		item->CubemapPaths.push_back(bottom);
+			// right
+			if (firstExtension != std::filesystem::path(right).extension().string()) {
+				Logger::Get().Log("Cannot create a cubemap because: " + right + ", extension is not identical to the left one", true);
+				goto Exit0;
+			}
+			if (!loadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X, m_parser->GetProjectPath(right), width2, height2, nullptr))
+				goto Exit0;
+			item->CubemapPaths.push_back(right);
 
-		// right
-		if (firstExtension != std::filesystem::path(right).extension().string()) {
-			Logger::Get().Log("Cannot create a cubemap because: " + right + ", extension is not identical to the left one", true);
-			return false;
-		}
-		loadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X, m_parser->GetProjectPath(right), width2, height2, nullptr);
-		item->CubemapPaths.push_back(right);
+			// back
+			if (firstExtension != std::filesystem::path(back).extension().string()) {
+				Logger::Get().Log("Cannot create a cubemap because: " + back + ", extension is not identical to the left one", true);
+				goto Exit0;
+			}
+			if (!loadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, m_parser->GetProjectPath(back), width2, height2, nullptr))
+				goto Exit0;
+			item->CubemapPaths.push_back(back);
 
-		// back
-		if (firstExtension != std::filesystem::path(back).extension().string()) {
-			Logger::Get().Log("Cannot create a cubemap because: " + back + ", extension is not identical to the left one", true);
-			return false;
-		}
-		loadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, m_parser->GetProjectPath(back), width2, height2, nullptr);
-		item->CubemapPaths.push_back(back);
-
-		item->TextureDetail->id = item->Texture; //Final set the id to make it valid
-		assert(item->TextureDetail->Validate());
-		item->EnvironmentTypeValue = environmentType;
-
-		// clean up
-		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-		item->TextureSize = glm::ivec2(width, height);
-
-		if (environmentType == EnvironmentType_Specular) {
-			auto oldId = item->TextureDetail->id;
-			*(item->TextureDetail) = TextureHelper::PostProcessCubemap_PrefilteredSpecular(*item->TextureDetail);
-			auto newId = item->TextureDetail->id;
-			assert(oldId != newId);
+			item->TextureDetail->id = item->Texture; //Final set the id to make it valid
 			assert(item->TextureDetail->Validate());
-			item->Texture = item->TextureDetail->id; //Texture was recreated
+			item->EnvironmentTypeValue = environmentType;
 
-			// specular map needs linear filter
-			item->Texture_MinFilter = GL_LINEAR_MIPMAP_LINEAR;
-			this->UpdateTextureParameters(item);
+			// clean up
+			glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+			item->TextureSize = glm::ivec2(width, height);
+
+			if (environmentType == EnvironmentType_Specular) {
+				auto oldId = item->TextureDetail->id;
+				*(item->TextureDetail) = TextureHelper::PostProcessCubemap_PrefilteredSpecular(*item->TextureDetail);
+				auto newId = item->TextureDetail->id;
+				assert(oldId != newId);
+				assert(item->TextureDetail->Validate());
+				item->Texture = item->TextureDetail->id; //Texture was recreated
+
+				// specular map needs linear filter
+				item->Texture_MinFilter = GL_LINEAR_MIPMAP_LINEAR;
+				this->UpdateTextureParameters(item);
+			}
+
+			assert(item->TextureDetail->width == width);
+			m_items.push_back(item);
+
+			return true;
 		}
-		
-		assert(item->TextureDetail->width == width);
-
-		return true;
+	Exit0: //This is old style c finally-alike general clean up idiom, you can find in Clean Code, change to finally if exception is considered available.
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+		if (item != nullptr)
+			delete item;
+		return false;
 	}
 	bool ObjectManager::CreateTextureEnvironment(const std::string& file)
 	{
