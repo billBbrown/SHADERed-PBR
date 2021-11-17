@@ -14,7 +14,7 @@ namespace ed {
 		bool Update(bool* doClose=nullptr);
 
 	private:
-		bool m_drawRegular();
+		bool m_drawRegular(bool inlineRegular);
 		bool m_drawFunction();
 
 		ed::InterfaceManager* m_data;

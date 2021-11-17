@@ -26,12 +26,33 @@ namespace ed {
 
 		ImGui::Text("%s ", m_var->Name);
 
+		bool compactPinnedUI = Settings::Instance().General.CompactPinnedUI;
+
+		bool inlineRegular = false; //Compact some short widget to make more space
+		if (compactPinnedUI && m_var->Function == FunctionShaderVariable::None) {
+			auto varType = m_var->GetType(); 
+			if (varType == ed::ShaderVariable::ValueType::Float1
+				|| varType == ed::ShaderVariable::ValueType::Boolean1) {
+				ImGui::SameLine();
+				inlineRegular = true;
+				bool mres = m_drawRegular(inlineRegular);
+				modified = mres || modified;
+			}
+		}
+
 		if (state != FunctionShaderVariable::None)
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 
 		ImGui::SameLine();
-		ImGui::SetCursorPosX(ImGui::GetWindowWidth() - (96 + ImGui::GetStyle().WindowPadding.x * 2));
-		if (ImGui::Button(UI_ICON_EDIT, ImVec2(25, 0))) {
+		const float iconSize = 25;
+		if (compactPinnedUI)
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() 
+				- (3 * iconSize + ImGui::GetStyle().WindowPadding.x * 3 + ImGui::GetStyle().ScrollbarSize + 2));
+		else
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() 
+				- (2 * iconSize + ImGui::GetStyle().WindowPadding.x * 2 + ImGui::GetStyle().ScrollbarSize + 2));
+
+		if (ImGui::Button(UI_ICON_EDIT, ImVec2(iconSize, 0))) {
 			m_var->Function = FunctionShaderVariable::None;
 			modified = true;
 		}
@@ -42,7 +63,7 @@ namespace ed {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 
 		ImGui::SameLine();
-		if (ImGui::Button(UI_ICON_FX, ImVec2(25, 0))) {
+		if (ImGui::Button(UI_ICON_FX, ImVec2(iconSize, 0))) {
 			// find first function that is compatible with this value type
 			for (int i = 0; i < (int)FunctionShaderVariable::Count; i++) {
 				if (m_var->Function == FunctionShaderVariable::PluginFunction)
@@ -54,31 +75,36 @@ namespace ed {
 				}
 			}
 		}
-		ImGui::SameLine();
-		if (doClose != nullptr) {
-			if (ImGui::Button(UI_ICON_CLOSE, ImVec2(25, 0))) {
 
-				*doClose = true;
-				modified = true;
+		if (compactPinnedUI) {
+			ImGui::SameLine();
+			if (doClose != nullptr) {
+				if (ImGui::Button(UI_ICON_CLOSE, ImVec2(25, 0))) {
+
+					*doClose = true;
+					modified = true;
+				}
 			}
 		}
 
 		if (state == FunctionShaderVariable::None)
 			ImGui::PopStyleColor();
 
-		if (m_var->Function == FunctionShaderVariable::None) {
-			bool mres = m_drawRegular();
-			modified = mres || modified;
-		} else {
-			bool mfunc = m_drawFunction();
-			modified = mfunc || modified;
+		if (!inlineRegular) {
+			if (m_var->Function == FunctionShaderVariable::None) {
+				bool mres = m_drawRegular(inlineRegular);
+				modified = mres || modified;
+			} else {
+				bool mfunc = m_drawFunction();
+				modified = mfunc || modified;
+			}
 		}
 
 		ImGui::PopID();
 
 		return modified;
 	}
-	bool VariableValueEditUI::m_drawRegular()
+	bool VariableValueEditUI::m_drawRegular(bool inlineRegular)
 	{
 		ImGui::PushItemWidth(-1);
 		bool ret = false;
@@ -101,8 +127,12 @@ namespace ed {
 			}
 			break;
 		case ed::ShaderVariable::ValueType::Float1:
+			if (inlineRegular)
+				ImGui::PushItemWidth(-100);
 			if (ImGui::DragFloat(("##valuedit" + std::string(m_var->Name)).c_str(), m_var->AsFloatPtr(), 0.01f))
 				ret = true;
+			if (inlineRegular)
+				ImGui::PopItemWidth();
 			break;
 		case ed::ShaderVariable::ValueType::Float2:
 			if (ImGui::DragFloat2(("##valuedit" + std::string(m_var->Name)).c_str(), m_var->AsFloatPtr(), 0.01f))
@@ -143,8 +173,12 @@ namespace ed {
 				ret = true;
 			break;
 		case ed::ShaderVariable::ValueType::Boolean1:
+			if (inlineRegular)
+				ImGui::PushItemWidth(-100);
 			if (ImGui::Checkbox(("##valuedit" + std::string(m_var->Name)).c_str(), m_var->AsBooleanPtr()))
 				ret = true;
+			if (inlineRegular)
+				ImGui::PopItemWidth();
 			break;
 		case ed::ShaderVariable::ValueType::Boolean2:
 			if (ImGui::Checkbox(("##valuedit1" + std::string(m_var->Name)).c_str(), m_var->AsBooleanPtr(0)))

@@ -47,6 +47,7 @@ namespace ed {
 			int FontSize;
 			bool AutoScale;
 			bool Tips;
+			bool CompactPinnedUI;
 			std::vector<std::string> HLSLExtensions;
 			std::vector<std::string> VulkanGLSLExtensions;
 			std::unordered_map<std::string, std::vector<std::string>> PluginShaderExtensions;

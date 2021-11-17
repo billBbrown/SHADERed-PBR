@@ -378,6 +378,11 @@ namespace ed {
 		ImGui::SameLine();
 		ImGui::Checkbox("##optg_tips", &settings->General.Tips);
 
+		/* TIPS ON STARTUP: */
+		ImGui::Text("Compact Pinned UI, show more variables: ");
+		ImGui::SameLine();
+		ImGui::Checkbox("##optg_compactpinnedui", &settings->General.CompactPinnedUI);
+
 		/* STARTUP TEMPLATE: */
 		ImGui::Text("Default template: ");
 		ImGui::SameLine();

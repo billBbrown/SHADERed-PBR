@@ -38,20 +38,24 @@ namespace ed {
 			if (m_editor.Update(&doClose))
 				m_data->Parser.ModifyProject();
 
-			/*ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - Settings::Instance().CalculateSize(25));
-			if (ImGui::Button("CLOSE", ImVec2(Settings::Instance().CalculateSize(50), 0))) {
-				Remove(var->Name);
-				m_data->Parser.ModifyProject();
-			}*/
-
+			bool compactPinnedUI = Settings::Instance().General.CompactPinnedUI;
+			if(!compactPinnedUI){
+				ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - Settings::Instance().CalculateSize(25));
+				if (ImGui::Button("CLOSE", ImVec2(Settings::Instance().CalculateSize(50), 0))) {
+					doClose = true;
+				}
+			}
 			if (doClose) { //The upper button take too much space, changed to a small X close button
 				Remove(var->Name);
 				m_data->Parser.ModifyProject();
 			}
 
-
-			ImGui::NewLine();
-			ImGui::Separator();
+			if(!compactPinnedUI){
+				ImGui::NewLine();
+				ImGui::Separator();
+			} else {
+				//How to make a thin line?
+			}
 			ImGui::NewLine();
 
 			ImGui::PopID();
