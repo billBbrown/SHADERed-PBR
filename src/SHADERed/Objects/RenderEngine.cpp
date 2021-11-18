@@ -117,6 +117,9 @@ namespace ed {
 		if (isMSAA)
 			glEnable(GL_MULTISAMPLE);
 
+		if (Settings::Instance().Preview.EnableCubemapSeamleass)
+			glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+			
 		// recreate render texture if size has changed
 		if (m_lastSize.x != width || m_lastSize.y != height) {
 			m_lastSize = glm::vec2(width, height);

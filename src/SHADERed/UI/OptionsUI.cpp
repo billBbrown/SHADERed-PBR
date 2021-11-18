@@ -820,6 +820,11 @@ namespace ed {
 			m_data->Renderer.RequestTextureResize();
 		}
 
+		/* EnableCubemapSeamleass */
+		ImGui::Text("Enable Cubemap Seamleass");
+		ImGui::SameLine();
+		ImGui::Checkbox("##optp_enablecubemapseamless", &settings->Preview.EnableCubemapSeamleass);
+
 		/* SWITCH LEFT AND RIGHT: */
 		ImGui::Text("Switch what left and right clicks do: ");
 		ImGui::SameLine();

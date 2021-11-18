@@ -85,6 +85,7 @@ namespace ed {
 		Preview.ApplyFPSLimitToApp = false;
 		Preview.LostFocusLimitFPS = false;
 		Preview.MSAA = 1;
+		Preview.EnableCubemapSeamleass = true;
 	}
 	void Settings::Load()
 	{
@@ -173,6 +174,7 @@ namespace ed {
 		Preview.ApplyFPSLimitToApp = ini.GetBoolean("preview", "fpslimitwholeapp", false);
 		Preview.LostFocusLimitFPS = ini.GetBoolean("preview", "fpslimitlostfocus", false);
 		Preview.MSAA = ini.GetInteger("preview", "msaa", 1);
+		Preview.EnableCubemapSeamleass = ini.GetBoolean("preview", "enablecubemapseamless", true); 
 
 		m_parseExt(ini.Get("plugins", "notloaded", ""), Plugins.NotLoaded);
 
@@ -265,6 +267,7 @@ namespace ed {
 		ini << "fpslimitwholeapp=" << Preview.ApplyFPSLimitToApp << std::endl;
 		ini << "fpslimitlostfocus=" << Preview.LostFocusLimitFPS << std::endl;
 		ini << "msaa=" << Preview.MSAA << std::endl;
+		ini << "enablecubemapseamless=" << Preview.EnableCubemapSeamleass << std::endl;
 
 		ini << "[editor]" << std::endl;
 		ini << "smartpred=" << Editor.SmartPredictions << std::endl;
