@@ -313,7 +313,6 @@ namespace ed {
 		m_parser->ModifyProject();
 
 		ObjectManagerItem* item = new ObjectManagerItem(file, ObjectType::Texture);
-		m_items.push_back(item);
 
 		GLuint internalFormat = isFloat ? GL_RGBA32F : GL_RGBA8; //It used to be GL_RGBA, but since type is always GL_UNSIGNED_BYTE, not SHORT4444 alike, GL_RGBA8 is more precise
 		GLenum format = GL_RGBA;
@@ -372,6 +371,7 @@ namespace ed {
 		else
 			stbi_image_free(data);
 
+		m_items.push_back(item);
 		return true;
 	}
 	bool ObjectManager::CreateTexture3D(const std::string& file)
@@ -639,6 +639,17 @@ namespace ed {
 				Logger::Get().Log("Cannot create environment texture: " + file + " because lut recreation failed",
 					true);
 				return false;
+			} else {
+				ObjectManagerItem* itemLut = m_items.back();
+				if (std::filesystem::path(spBRDF_LUTResult.SavedPath[0]).stem() != std::filesystem::path(itemLut->Name).stem()) {
+					Logger::Get().Log("Cannot create environment texture: " + file + " because lut recreation failed(Name error)",
+						true);
+					return false;
+				}
+				// Lut must clamp
+				itemLut->Texture_WrapS = GL_CLAMP_TO_EDGE;
+				itemLut->Texture_WrapT = GL_CLAMP_TO_EDGE;
+				UpdateTextureParameters(itemLut); 
 			}
 
 			//Also add the origin one as a normal texture, in case someone need a lat-long sky cube; If someone dont like it, just delete it, no big deal.
