@@ -1119,7 +1119,7 @@ namespace ed {
 				else
 					dds_image_free(ddsImage);
 
-				if (item->FlippedTexture) {
+				if (item->Texture_VFlipped) {
 					std::swap(item->Texture, item->FlippedTexture);
 				}
 
