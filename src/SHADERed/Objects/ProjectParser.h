@@ -66,12 +66,16 @@ namespace ed {
 		inline void ModifyProject() { m_modified = true; }
 		inline bool IsProjectModified() { return m_modified; }
 
+	public:
+		void ParseVariableValue(pugi::xml_node& node, ShaderVariable* var);
+		void ExportVariableValue(pugi::xml_node& node, ShaderVariable* vars);
+
 	private:
 		void m_parseV1(pugi::xml_node& projectNode); // old
 		void m_parseV2(pugi::xml_node& projectNode); // current -> merge blend, rasterizer and depth states into one "render state" ||| remove input layout parsing ||| ignore shader entry property
 
 		void m_parseVariableValue(pugi::xml_node& node, ShaderVariable* var);
-		void m_exportVariableValue(pugi::xml_node& node, ShaderVariable* vars);
+		void m_exportVariableValue(pugi::xml_node& node, ShaderVariable* var);
 		void m_exportShaderVariables(pugi::xml_node& node, std::vector<ShaderVariable*>& vars);
 		GLenum m_toBlend(const char* str);
 		GLenum m_toBlendOp(const char* str);

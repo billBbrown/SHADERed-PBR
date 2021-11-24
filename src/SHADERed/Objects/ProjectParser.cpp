@@ -1062,6 +1062,84 @@ namespace ed {
 		m_projectPath = std::filesystem::current_path().string();
 	}
 
+
+	void ProjectParser::ParseVariableValue(pugi::xml_node& variableNode, ShaderVariable* var)
+	{
+		ShaderVariable::ValueType type = ShaderVariable::ValueType::Float1;
+		SystemShaderVariable system = SystemShaderVariable::None;
+		FunctionShaderVariable func = FunctionShaderVariable::None;
+
+		if (!variableNode.attribute("type").empty()) {
+			const char* myType = variableNode.attribute("type").as_string();
+			for (int i = 0; i < HARRAYSIZE(VARIABLE_TYPE_NAMES); i++)
+				if (strcmp(myType, VARIABLE_TYPE_NAMES[i]) == 0) {
+					type = (ed::ShaderVariable::ValueType)i;
+					break;
+				}
+		}
+		if (!variableNode.attribute("system").empty()) {
+			const char* mySystem = variableNode.attribute("system").as_string();
+			for (int i = 0; i < HARRAYSIZE(SYSTEM_VARIABLE_NAMES); i++)
+				if (strcmp(mySystem, SYSTEM_VARIABLE_NAMES[i]) == 0) {
+					system = (ed::SystemShaderVariable)i;
+					break;
+				}
+			if (SystemVariableManager::GetType(system) != type)
+				system = ed::SystemShaderVariable::None;
+		}
+		if (!variableNode.attribute("function").empty()) {
+			const char* myFunc = variableNode.attribute("function").as_string();
+			for (int i = 0; i < HARRAYSIZE(FUNCTION_NAMES); i++)
+				if (strcmp(myFunc, FUNCTION_NAMES[i]) == 0) {
+					func = (FunctionShaderVariable)i;
+					break;
+				}
+			if (system != SystemShaderVariable::None || !FunctionVariableManager::HasValidReturnType(type, func))
+				func = FunctionShaderVariable::None;
+		}
+
+		FunctionVariableManager::AllocateArgumentSpace(var, func);
+
+		// parse value
+		if (system == SystemShaderVariable::None)
+			m_parseVariableValue(variableNode, var);
+	}
+
+
+	void ProjectParser::ExportVariableValue(pugi::xml_node& varNode, ShaderVariable* var)
+	{
+		if (var->GetType() == ShaderVariable::ValueType::Count)
+			return;
+
+		varNode.append_attribute("type").set_value(VARIABLE_TYPE_NAMES[(int)var->GetType()]);
+		varNode.append_attribute("name").set_value(var->Name);
+
+		bool isInvert = var->Flags & (char)ShaderVariable::Flag::Inverse;
+		bool isLastFrame = var->Flags & (char)ShaderVariable::Flag::LastFrame;
+		if (isInvert) varNode.append_attribute("invert").set_value(isInvert);
+		if (isLastFrame) varNode.append_attribute("lastframe").set_value(isLastFrame);
+
+		if (var->System != SystemShaderVariable::None) {
+			varNode.append_attribute("system").set_value(SYSTEM_VARIABLE_NAMES[(int)var->System]);
+			if (var->System == SystemShaderVariable::PluginVariable) {
+				m_addPlugin(m_plugins->GetPluginName(var->PluginSystemVarData.Owner));
+				varNode.append_attribute("plugin").set_value(m_plugins->GetPluginName(var->PluginSystemVarData.Owner).c_str());
+				varNode.append_attribute("itemname").set_value(var->PluginSystemVarData.Name);
+			}
+		} else if (var->Function != FunctionShaderVariable::None) {
+			varNode.append_attribute("function").set_value(FUNCTION_NAMES[(int)var->Function]);
+
+			if (var->Function == FunctionShaderVariable::PluginFunction) {
+				m_addPlugin(m_plugins->GetPluginName(var->PluginFuncData.Owner));
+				varNode.append_attribute("plugin").set_value(m_plugins->GetPluginName(var->PluginFuncData.Owner).c_str());
+				varNode.append_attribute("funcname").set_value(var->PluginFuncData.Name);
+			}
+		}
+
+		if (var->System == SystemShaderVariable::None)
+			m_exportVariableValue(varNode, var);
+	}
+
 	void ProjectParser::m_parseVariableValue(pugi::xml_node& node, ShaderVariable* var)
 	{
 		int rowID = 0;

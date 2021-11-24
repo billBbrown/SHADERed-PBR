@@ -3,6 +3,7 @@
 #include <imgui/imgui.h>
 
 #include <SHADERed/Objects/Logger.h>
+#include <SHADERed/Objects/ProjectParser.h>
 
 namespace ed {
 	void PinnedUI::OnEvent(const SDL_Event& e)
@@ -122,16 +123,27 @@ namespace ed {
 
 	void PinnedUI::CopyPinnedVariableTargetToThis(std::vector<ed::ShaderVariable*>& els)
 	{
+		if (m_data == nullptr)
+			return;
+
 		bool changed = false;
+		pugi::xml_document doc;
 		for (size_t i = 0; i < m_pinnedVars.size(); ++i) {
 			ed::ShaderVariable* var = m_pinnedVars[i];
 			for (ed::ShaderVariable* outerVar : els) {
 				if (var == outerVar) //No need to change
 					continue;
 
-				if (var->GetType() == outerVar->GetType() && strcmp(var->Name, outerVar->Name) == 0 && 
-					var->Function == FunctionShaderVariable::None) {
-					memcpy(outerVar->Data, m_pinnedVars[i]->Data, ed::ShaderVariable::GetSize(outerVar->GetType()));
+				if (var->GetType() == outerVar->GetType() && strcmp(var->Name, outerVar->Name) == 0) {
+					/*
+					Old copy method, can copy Non-Function only;
+					if(var->Function == FunctionShaderVariable::None)
+						memcpy(outerVar->Data, m_pinnedVars[i]->Data, ed::ShaderVariable::GetSize(outerVar->GetType()));*/
+
+					pugi::xml_node nodeTemp = doc.append_child("variable");
+					m_data->Parser.ExportVariableValue(nodeTemp, var);
+					m_data->Parser.ParseVariableValue(nodeTemp, outerVar);
+
 					changed = true;
 				}
 			}
