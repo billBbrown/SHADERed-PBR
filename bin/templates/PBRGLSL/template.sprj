@@ -1,0 +1,125 @@
+<?xml version="1.0"?>
+<project version="2">
+	<pipeline>
+		<pass name="BasicPBR" type="shader" active="true" patchverts="1">
+			<shader type="vs" path="shaders/BasicPBRVS.glsl" entry="main" />
+			<shader type="ps" path="shaders/BasicPBRPS.glsl" entry="main" />
+			<inputlayout>
+				<item value="Position" semantic="POSITION" />
+				<item value="Normal" semantic="NORMAL" />
+				<item value="Texcoord" semantic="TEXCOORD0" />
+			</inputlayout>
+			<rendertexture />
+			<items>
+				<item name="PreviewSphere" type="model">
+					<filepath>PreviewSphere.fbx</filepath>
+					<grouponly>false</grouponly>
+					<modelImportFlags>10781993</modelImportFlags>
+				</item>
+			</items>
+			<itemvalues />
+			<variables>
+				<variable type="float" name="debugMip">
+					<row>
+						<value>0</value>
+					</row>
+				</variable>
+				<variable type="float3" name="mainLightDir" function="VectorNormalize">
+					<row>
+						<value>4.94000006</value>
+						<value>6.07000017</value>
+						<value>6.36000013</value>
+						<value>0</value>
+					</row>
+				</variable>
+				<variable type="float3" name="cameraPosition" system="CameraPosition3" />
+				<variable type="bool" name="flipNormalY">
+					<row>
+						<value>false</value>
+					</row>
+				</variable>
+				<variable type="float3" name="mainLightColor">
+					<row>
+						<value>1</value>
+						<value>0.999989986</value>
+						<value>0.999989986</value>
+					</row>
+				</variable>
+				<variable type="float" name="mainLightIntensity">
+					<row>
+						<value>3.1400001</value>
+					</row>
+				</variable>
+				<variable type="float3" name="ambientColor">
+					<row>
+						<value>9.99999997e-07</value>
+						<value>9.99989993e-07</value>
+						<value>9.99989993e-07</value>
+					</row>
+				</variable>
+				<variable type="int" name="debugValue">
+					<row>
+						<value>0</value>
+					</row>
+				</variable>
+				<variable type="float4x4" name="matGeo" system="GeometryTransform" />
+				<variable type="bool" name="flipTextureY">
+					<row>
+						<value>false</value>
+					</row>
+				</variable>
+				<variable type="float4x4" name="matVP" system="ViewProjection" />
+			</variables>
+			<macros />
+		</pass>
+	</pipeline>
+	<objects>
+		<object type="texture" path="textures/PreviewSphere_Sphere_BaseColor.png" vflip="true" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
+			<bind slot="0" name="BasicPBR" />
+		</object>
+		<object type="texture" path="textures/PreviewSphere_Sphere_Metallic.png" vflip="true" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
+			<bind slot="2" name="BasicPBR" />
+		</object>
+		<object type="texture" path="textures/PreviewSphere_Sphere_Normal.png" vflip="true" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
+			<bind slot="1" name="BasicPBR" />
+		</object>
+		<object type="texture" path="textures/PreviewSphere_Sphere_Roughness.png" vflip="true" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
+			<bind slot="3" name="BasicPBR" />
+		</object>
+		<object type="texture" path="textures/Sphere_ambient_occlusion.png" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
+			<bind slot="4" name="BasicPBR" />
+		</object>
+		<object type="texture" name="EnvSmall.sp.hdr" cube="true" left="textures/EnvSmall.sp.negX.hdr" top="textures/EnvSmall.sp.posY.hdr" front="textures/EnvSmall.sp.negZ.hdr" bottom="textures/EnvSmall.sp.negY.hdr" right="textures/EnvSmall.sp.posX.hdr" back="textures/EnvSmall.sp.posZ.hdr" env_type="2" vflip="false" min_filter="Linear_MipmapLinear" mag_filter="Linear" wrap_s="ClampToEdge" wrap_t="ClampToEdge">
+			<bind slot="5" name="BasicPBR" />
+		</object>
+		<object type="texture" name="EnvSmall.ir.hdr" cube="true" left="textures/EnvSmall.ir.negX.hdr" top="textures/EnvSmall.ir.posY.hdr" front="textures/EnvSmall.ir.negZ.hdr" bottom="textures/EnvSmall.ir.negY.hdr" right="textures/EnvSmall.ir.posX.hdr" back="textures/EnvSmall.ir.posZ.hdr" env_type="3" vflip="false" min_filter="Linear" mag_filter="Linear" wrap_s="ClampToEdge" wrap_t="ClampToEdge">
+			<bind slot="6" name="BasicPBR" />
+		</object>
+		<object type="texture" path="textures/EnvSmall.lut.hdr" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat">
+			<bind slot="7" name="BasicPBR" />
+		</object>
+		<object type="texture" path="textures/EnvSmall.hdr" vflip="false" min_filter="Linear" mag_filter="Nearest" wrap_s="Repeat" wrap_t="Repeat" />
+	</objects>
+	<cameras />
+	<settings>
+		<entry type="file" name="BasicPBR" shader="vs" />
+		<entry type="file" name="BasicPBR" shader="ps" />
+		<entry type="pinned" name="debugMip" owner="BasicPBR" />
+		<entry type="pinned" name="mainLightDir" owner="BasicPBR" />
+		<entry type="pinned" name="flipNormalY" owner="BasicPBR" />
+		<entry type="pinned" name="mainLightColor" owner="BasicPBR" />
+		<entry type="pinned" name="mainLightIntensity" owner="BasicPBR" />
+		<entry type="pinned" name="ambientColor" owner="BasicPBR" />
+		<entry type="pinned" name="debugValue" owner="BasicPBR" />
+		<entry type="pinned" name="flipTextureY" owner="BasicPBR" />
+		<entry type="camera" fp="false">
+			<distance>7</distance>
+			<pitch>9</pitch>
+			<yaw>139</yaw>
+			<roll>360</roll>
+		</entry>
+		<entry type="clearcolor" r="0" g="0" b="0" a="0" />
+		<entry type="usealpha" val="false" />
+	</settings>
+	<plugindata />
+</project>
