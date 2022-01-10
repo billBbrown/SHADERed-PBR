@@ -71,7 +71,12 @@ SHADERed also works nicely with external text editors (such as VS Code) - it wil
 
 ![Instant preview as you write your shader](./Misc/Screenshots/instantresult.gif)
 
+### PBR Supported 
+
+* See [PBR Features](#PBR Features) for more detail
+
 ### Other features
+
 SHADERed has lots of features that let you achieve effects like in no other shader editor. Features are also being added rapidly. Here are some of the feature:
 * render states (blending, stencil test, depth test, etc...)
 * import 3D models
@@ -205,6 +210,11 @@ Run:
 
 ### Windows
 1. Install SDL2, GLEW & GLM through your favourite package manager (I recommend vcpkg)
+
+   If you are using x64 windows (most people do), please make sure you have installed the x64  version with command like `vcpkg install sdl2:x64-windws` 
+
+2. Make sure you have a Python3 installed, Cmake may use python3
+
 2. Run cmake-gui and set CMAKE_TOOLCHAIN_FILE variable 
 
    * CMAKE_TOOLCHAIN_FILE : select "Specify toolchain file for cross-compiling", then choose 
@@ -213,7 +223,8 @@ Run:
 
    * Make the build directory at : Root/PBR/projects/build, which is at the same depth as cmake folder.
 
-3. Press Configure and then Generate if no errors occured
+4. Press Configure and then Generate if no errors occured
+
 4. Open the .sln and build the project!
 
 ## Tutorials
@@ -247,5 +258,67 @@ This project uses:
  - [dfranx/ImFileDialog](https://github.com/dfranx/ImFileDialog)
  - [dfranx/dds](https://github.com/dfranx/dds)
 
+## PBR Features
+
+### Brief
+
+* PBR project is based on project Nadrin/PBR
+
+### PBR project tutorial
+
+* Just New > PBR;  Everything is setup
+* Add model by 
+  * FBX can specific all import flags
+
+* Apply texture by 
+* You may also use resource manage to reapply texture
+* You may refer to OpenGL PBR tutorial for shader detail
+
+### HDR Environment
+
+* Right click in Object Manager Panel, choose "Create Texture Environment", select a HDR lat-long environment map.
+* Then a serial of environment map PBR needed will be created: 
+
+  * A specular cubemap with mips
+  * An ir map using for IBL diffuse
+  * A IBL pre-calculated cubemap 2D reference
+  * A original cubemap, which may not be necessary for PBR rendering, you may delete it later.
+* See the pbr shader in the template for more detail. 
+
+
+### Texture Related 
+
+* 2D Texture and Cube Texture reviews are unified
+* Support float point texture with .hdr format; and opengl texture parameter ---format/type/internalFormat--are separated.
+* Cubemaps can specific filters like 2d textures
+* Support reloading 2d/3d textures
+* Add file existence checking before loading the texture to avoid empty objects.
+* Cubemap add seamless settings by default(Which can be changed in global settings)
+
+### Other Improvement
+
+* Improve the compatibility of pinned UI to view more parameters
+
+* Pinned UI, add "Switch Pinned Variable Target To This" and " Copy Pinned Variable Target To This", two actions to copy and view variables between passes. 
+
+  * For example: you have 2 pbr passes with different textures settings.
+
+    Older GUI may only modify parameters with one pass in pinned UI
+
+  * Now we can use "Switch Pinned Variable Target To This" to switch pinned UI operation target
+
+  * We can also use  "Copy Pinned Variable Target To This" to copy current pinned UI variable values to another pass
+
+    * Parameter with function is also supported
+
+  * Add "Sort by name".
+
+* Fixed: When creating a RenderState with Cull==Front, then all previews are wrong. States need to be restored in preview
+
+* Object List UI, Add bind target texture name to binding list, which is more clear.
+
+* Add "Sort by name" in PipelineUI
+
 ## LICENSE
+
 SHADERed is licensed under MIT license. See [LICENSE](./LICENSE) for more details.
